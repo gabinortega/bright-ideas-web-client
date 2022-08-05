@@ -15,19 +15,15 @@ describe('InMemoryDatabaseService', () => {
   });
 
   it('InMemoryDatabase service should initialize with no data', () => {
-    expect(service.ideaIdMap.keys.length).toEqual(0);
-    expect(service.ideaTopicMap.keys.length).toEqual(0);
+    expect(service.ideaDbLength).toEqual(0);
+    expect(service.tagDbLength).toEqual(0);
+    expect(service.conceptDbLength).toEqual(0);
 
-    expect(service.tagIdMap.keys.length).toEqual(0);
-    expect(service.tagNameMap.keys.length).toEqual(0);
-
-    expect(service.conceptIdMap.keys.length).toEqual(0);
-    expect(service.tagLastId).toEqual(0);
-    expect(service.conceptHistory.length).toEqual(0);
+    /*
     expect(service.ideaHistory.length).toEqual(0);
     expect(service.tagHistory.length).toEqual(0);
     expect(service.tagKeywords.length).toEqual(0);
     expect(service.conceptLastId).toEqual(0);
-    expect(service.ideaLastId).toEqual(0);
+    */
   });
 });

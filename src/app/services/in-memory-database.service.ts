@@ -10,76 +10,237 @@ import { Idea } from '../shared/idea';
   providedIn: 'root',
 })
 export class InMemoryDatabaseService {
-  public tagIdMap = new Map<number, Tag>();
-  public tagNameMap = new Map<string, Tag>();
+  private tagIdMap = new Map<number, Tag>();
+  private tagNameMap = new Map<string, Tag>();
 
-  public ideaIdMap = new Map<number, Idea>();
-  public ideaTopicMap = new Map<string, Idea>();
+  private ideaIdMap = new Map<number, Idea>();
+  private ideaTopicMap = new Map<string, Idea>();
 
-  public conceptIdMap = new Map<number, Concept>();
-  public conceptContentSort: Concept[] = [];
+  private conceptIdMap = new Map<number, Concept>();
+  private conceptContentSort: Concept[] = [];
 
-  public tagKeywords: TagKeywords[] = [];
-  public tagHistory: Tag[] = [];
-  public conceptHistory: Tag[] = [];
-  public ideaHistory: Tag[] = [];
+  private tagKeywords: TagKeywords[] = [];
+  private tagHistory: Tag[] = [];
+  private conceptHistory: Tag[] = [];
+  private ideaHistory: Tag[] = [];
 
-  public ideaLastId: number = 0;
-  public conceptLastId: number = 0;
-  public tagLastId: number = 0;
+  private _ideaLastId: number = 0;
+  private _conceptLastId: number = 0;
+  private _tagLastId: number = 0;
 
-  _saveTag(tag: Tag) {
-    if (tag.id === 0) {
-      tag.id = this._getTagId();
+  public get ideaDbLength(): number {
+    if (this.ideaIdMap.size !== this.ideaTopicMap.size) {
+      throw new Error('ideaDb is out of sync');
     }
-    this.tagIdMap.set(tag.id, tag);
-    this.tagNameMap.set(tag.name, tag);
-    return tag;
+
+    return this.ideaIdMap.size;
   }
 
-  private _getTagId(): number {
-    this.tagLastId = this.tagLastId + 1;
-    return this.tagLastId;
+  public get conceptDbLength(): number {
+    if (this.conceptIdMap.size !== this.conceptContentSort.length) {
+      throw new Error('conceptDb is out of sync');
+    }
+
+    return this.conceptIdMap.size;
   }
 
-  _saveIdea(idea: Idea) {
-    if (idea.id === 0) {
-      idea.id = this._getIdeaId();
+  public get tagDbLength(): number {
+    if (this.tagIdMap.size !== this.tagNameMap.size) {
+      throw new Error('tagDb is out of sync');
+    }
+
+    return this.tagIdMap.size;
+  }
+
+  public setIdeaToIdMap(idea: Idea): Idea {
+    if (!idea.id) {
+      idea.id = this.getNextIdeaId();
+    }
+    if (!idea.topic.trim()) {
+      throw new Error('Idea Topic must not be blank.');
     }
     this.ideaIdMap.set(idea.id, idea);
+    return idea;
+  }
+
+  public setIdeaToNameMap(idea: Idea): Idea {
+    if (!idea.id) {
+      throw new Error('Idea Id must not be zero.');
+    }
+    if (!idea.topic.trim()) {
+      throw new Error('Idea Topic must not be blank.');
+    }
     this.ideaTopicMap.set(idea.topic, idea);
     return idea;
   }
 
-  private _getIdeaId(): number {
-    this.ideaLastId = this.ideaLastId + 1;
-    return this.ideaLastId;
+  public setTagToIdMap(tag: Tag): Tag {
+    if (tag.id === 0) {
+      tag.id = this.getNextTagId();
+    }
+    if (!tag.name.trim()) {
+      throw new Error('Tag name must not be blank.');
+    }
+    this.tagIdMap.set(tag.id, tag);
+    return tag;
   }
 
-  _insertConcept(concept: Concept) {
-    if (concept.id === 0) {
-      concept.id = this._getConceptId();
+  public setTagToNameMap(tag: Tag): Tag {
+    if (tag.id === 0) {
+      throw new Error('Tag Id must not be zero.');
     }
-    concept.content = concept.content.trim(); // to sorted and found it quickly
+    if (!tag.name.trim()) {
+      throw new Error('Tag name must not be blank.');
+    }
+    this.tagNameMap.set(tag.name, tag);
+    return tag;
+  }
+
+  public setConceptToIdMap(concept: Concept): Concept {
+    if (concept.id === 0) {
+      concept.id = this.getNextConceptId();
+    }
+    if (!concept.content.trim()) {
+      throw new Error('Concept content must not be blank.');
+    }
     this.conceptIdMap.set(concept.id, concept);
+    return concept;
+  }
+
+  public insertConceptToSortByContentList(concept: Concept): Concept {
+    if (concept.id === 0) {
+      throw new Error('Concept Id must not be zero.');
+    }
+    if (!concept.content.trim()) {
+      throw new Error('Concept name must not be blank.');
+    }
     this.conceptContentSort.push(concept);
     return concept;
   }
 
-  _updateConcept(newConcept: Concept) {
-    this.conceptIdMap.set(newConcept.id, newConcept);
-    let oldConcept = this.conceptContentSort.filter(
-      (x) => (x.content = newConcept.content.trim())
-    )[0];
+  public updateConceptToSortByContentList(concept: Concept): Concept {
+    if (concept.id === 0) {
+      throw new Error('Concept Id must not be zero.');
+    }
+    if (!concept.content.trim()) {
+      throw new Error('Concept name must not be blank.');
+    }
 
-    let index = this.conceptContentSort.indexOf(oldConcept);
-    this.conceptContentSort.splice(index, 1, newConcept);
-    return newConcept;
+    let searchTerm = concept.content.trim();
+    let queryResult = this.conceptContentSort.filter(
+      (x) => x.content === searchTerm
+    );
+
+    if (queryResult.length > 0) {
+      let oldConcept = this.conceptContentSort.filter(
+        (x) => (x.content = concept.content.trim())
+      )[0];
+
+      let index = this.conceptContentSort.indexOf(oldConcept);
+      this.conceptContentSort.splice(index, 1, concept);
+    } else {
+      this.conceptContentSort.push(concept);
+    }
+
+    return concept;
   }
 
-  private _getConceptId(): number {
-    this.conceptLastId = this.conceptLastId + 1;
-    return this.conceptLastId;
+  tagExistById(id: number): boolean {
+    return this.tagIdMap.has(id);
+  }
+
+  tagExistByName(name: string): boolean {
+    return this.tagNameMap.has(name);
+  }
+
+  ideaExistById(id: number): boolean {
+    return this.ideaIdMap.has(id);
+  }
+
+  ideaExistByTopic(name: string): boolean {
+    return this.ideaTopicMap.has(name);
+  }
+
+  conceptExistById(id: number): boolean {
+    return this.conceptIdMap.has(id);
+  }
+
+  conceptExistByContent(content: string): boolean {
+    let searchTerm = content.trim();
+    return (
+      this.conceptContentSort.filter((x) => x.content === searchTerm).length > 0
+    );
+  }
+
+  getTagById(id: number): Tag {
+    return this.tagIdMap.get(id)!;
+  }
+
+  getTagByName(name: string): Tag {
+    return this.tagNameMap.get(name)!;
+  }
+
+  getIdeaById(id: number): Idea {
+    return this.ideaIdMap.get(id)!;
+  }
+
+  getIdeaByTopic(name: string): Idea {
+    return this.ideaTopicMap.get(name)!;
+  }
+
+  getConceptById(id: number): Concept {
+    return this.conceptIdMap.get(id)!;
+  }
+
+  getConceptQueryByContent(content: string): Concept[] {
+    let searchTerm = content.trim();
+    return this.conceptContentSort.filter((x) => x.content === searchTerm)!;
+  }
+
+  private getNextTagId(): number {
+    this._tagLastId = this._tagLastId + 1;
+    return this._tagLastId;
+  }
+
+  private getNextIdeaId(): number {
+    this._ideaLastId = this._ideaLastId + 1;
+    return this._ideaLastId;
+  }
+
+  private getNextConceptId(): number {
+    this._conceptLastId = this._conceptLastId + 1;
+    return this._conceptLastId;
+  }
+
+  deleteTagFromMapId(tag: Tag): void {
+    this.tagIdMap.delete(tag.id);
+  }
+
+  deleteTagFromMapName(tag: Tag): void {
+    this.tagNameMap.delete(tag.name);
+  }
+
+  deleteIdeaFromMapId(idea: Idea): void {
+    this.ideaIdMap.delete(idea.id);
+  }
+
+  deleteIdeaFromMapTopic(idea: Idea): void {
+    this.ideaTopicMap.delete(idea.topic);
+  }
+
+  deleteConceptFromMapId(concept: Concept): void {
+    this.conceptIdMap.delete(concept.id);
+  }
+
+  deleteConceptFromMapContent(concept: Concept): void {
+    let conceptDb = this.conceptContentSort.filter(
+      (x) => x.id === concept.id
+    )[0];
+
+    let index = this.conceptContentSort.indexOf(conceptDb);
+    if (index > -1) {
+      this.conceptContentSort.splice(index, 1);
+    }
   }
 
   clearDatabase(): void {
@@ -97,9 +258,9 @@ export class InMemoryDatabaseService {
     this.conceptHistory = [];
     this.ideaHistory = [];
 
-    this.conceptLastId = 0;
-    this.tagLastId = 0;
-    this.ideaLastId = 0;
+    this._conceptLastId = 0;
+    this._tagLastId = 0;
+    this._ideaLastId = 0;
   }
 
   constructor() {

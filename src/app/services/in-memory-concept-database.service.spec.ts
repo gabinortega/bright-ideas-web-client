@@ -32,19 +32,20 @@ describe('InMemoryConceptDatabaseService', () => {
     concept01.content = 'concept01';
     conceptSut.saveConcept(concept01);
 
-    expect(db.conceptLastId).toEqual(1);
+    expect(db.conceptDbLength).toEqual(1);
 
     let concept02 = new Concept();
     concept02.content = 'concept02';
     conceptSut.saveConcept(concept02);
 
-    expect(db.conceptLastId).toBe(2);
+    expect(db.conceptDbLength).toBe(2);
+
 
     let concept03 = new Concept();
     concept03.content = 'concept03';
     conceptSut.saveConcept(concept02, true);
 
-    expect(db.conceptLastId).toBe(3);
+    expect(db.conceptDbLength).toBe(3);
   });
 
   it('T02.1 should save the concept in the database after save it', () => {
@@ -54,9 +55,7 @@ describe('InMemoryConceptDatabaseService', () => {
     concept.content = content;
     conceptSut.saveConcept(concept);
 
-    expect(
-      db.conceptContentSort.filter((x) => x.content === content).length
-    ).toEqual(1);
+    expect(db.conceptExistByContent(content)).toBeTrue();
   });
 
   it('T02.1.1 When saving a Concept Given an existing id Should update an existing Concept', () => {
@@ -93,9 +92,9 @@ describe('InMemoryConceptDatabaseService', () => {
     concept03.type = 6;
     conceptSut.saveConcept(concept03); // saving a new one with the same content
 
-    expect(db.conceptIdMap.has(conceptId)).toBeTrue();
+    expect(db.conceptExistById(conceptId)).toBeTrue();
 
-    let existingConcept = db.conceptIdMap.get(conceptId)!;
+    let existingConcept = db.getConceptById(conceptId);
 
     expect(existingConcept.content).toEqual(contentUpdated);
     expect(existingConcept.isUrgent).toBeTrue();
@@ -122,7 +121,7 @@ describe('InMemoryConceptDatabaseService', () => {
       conceptSut.saveConcept(concept);
     }).toThrow(new Error(`A Concept with id ${conceptId} does not exist.`));
 
-    expect(db.conceptIdMap.has(conceptId)).toBeFalse();
+    expect(db.conceptExistById(conceptId)).toBeFalse();
   });
 
   it('T02.02.3.1 When saving a Concept Given force new Concept is set to True and the content exists Should create a new Concept', () => {
@@ -146,15 +145,13 @@ describe('InMemoryConceptDatabaseService', () => {
     concept2.type = 6;
     conceptSut.saveConcept(concept2, true); // saving a new one with the same content
 
-    expect(db.conceptLastId).toEqual(2);
+    expect(db.conceptDbLength).toEqual(2);
 
-    expect(
-      db.conceptContentSort.filter((x) => x.content === content).length
-    ).toEqual(2);
+    let conceptQueryResult = db.getConceptQueryByContent(content);
 
-    let firstConcept = db.conceptContentSort.filter(
-      (x) => x.content === content
-    )[0];
+    expect(conceptQueryResult.length).toEqual(2);
+
+    let firstConcept = conceptQueryResult[0];
 
     expect(firstConcept.isUrgent).toBeFalse();
     expect(firstConcept.isImportant).toBeFalse();
@@ -162,9 +159,7 @@ describe('InMemoryConceptDatabaseService', () => {
     expect(firstConcept.status).toEqual(5);
     expect(firstConcept.type).toEqual(5);
 
-    let secondContent = db.conceptContentSort.filter(
-      (x) => x.content === content
-    )[1];
+    let secondContent = conceptQueryResult[1];
 
     expect(secondContent.isUrgent).toBeTrue();
     expect(secondContent.isImportant).toBeTrue();
@@ -181,9 +176,7 @@ describe('InMemoryConceptDatabaseService', () => {
     concept.content = content;
     conceptSut.saveConcept(concept, true);
 
-    expect(
-      db.conceptContentSort.filter((x) => x.content === content).length
-    ).toEqual(1);
+    expect(db.conceptExistByContent(content)).toBeTrue();
   });
 
   it('T02.02.1.1 When saving a Concept Given no Id but an existing content Should update an existing Concept', () => {
@@ -207,15 +200,11 @@ describe('InMemoryConceptDatabaseService', () => {
     concept2.type = 6;
     conceptSut.saveConcept(concept2); // saving a new one with the same content
 
-    expect(db.conceptLastId).toEqual(1);
+    expect(db.conceptDbLength).toEqual(1);
 
-    expect(
-      db.conceptContentSort.filter((x) => x.content === content).length
-    ).toEqual(1);
+    expect(db.conceptExistByContent(content)).toBeTrue();
 
-    let existingContent = db.conceptContentSort.filter(
-      (x) => x.content === content
-    )[0];
+    let existingContent = db.getConceptQueryByContent(content)[0];
 
     expect(existingContent.isUrgent).toBeTrue();
     expect(existingContent.isImportant).toBeTrue();
@@ -251,15 +240,11 @@ describe('InMemoryConceptDatabaseService', () => {
     concept2.type = 6;
     conceptSut.saveConcept(concept2); // saving a new one with the same content plus spaces, plus returns
 
-    expect(db.conceptLastId).toEqual(1);
+    expect(db.conceptDbLength).toEqual(1);
 
-    expect(
-      db.conceptContentSort.filter((x) => x.content === content).length
-    ).toEqual(1);
+    expect(db.conceptExistByContent(content)).toBeTrue();
 
-    let existingContent = db.conceptContentSort.filter(
-      (x) => x.content === content
-    )[0];
+    let existingContent = db.getConceptQueryByContent(content)[0];
 
     expect(existingContent.isUrgent).toBeTrue();
     expect(existingContent.isImportant).toBeTrue();
@@ -276,9 +261,7 @@ describe('InMemoryConceptDatabaseService', () => {
     concept.content = content;
     conceptSut.saveConcept(concept);
 
-    expect(
-      db.conceptContentSort.filter((x) => x.content === content).length
-    ).toEqual(1);
+    expect(db.conceptExistByContent(content)).toBeTrue();
   });
 
   it('T02.03.2.1.1 When Saving a Concept Given an Idea parent being removed should not remove the Idea parent', () => {
@@ -304,16 +287,14 @@ describe('InMemoryConceptDatabaseService', () => {
     concept02.parents = [];
     concept02 = conceptSut.saveConcept(concept02);
 
-    expect(db.conceptLastId).toBe(1);
+    expect(db.conceptDbLength).toBe(1);
 
-    let result01 = db.conceptContentSort.filter(
-      (x) => x.content === conceptContent
-    );
+    let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
-    expect(result01.length).toEqual(1);
+    expect(conceptQueryResult.length).toEqual(1);
 
-    let ideaUt01 = result01[0];
-    let ideaUt02 = db.conceptIdMap.get(concept01Id)!;
+    let ideaUt01 = conceptQueryResult[0];
+    let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.parents.length).toEqual(2);
     expect(ideaUt02.parents.length).toEqual(2);
@@ -346,16 +327,14 @@ describe('InMemoryConceptDatabaseService', () => {
     concept02.parents = [childIdea03];
     concept02 = conceptSut.saveConcept(concept02);
 
-    expect(db.conceptLastId).toBe(1);
+    expect(db.conceptDbLength).toBe(1);
 
-    let result01 = db.conceptContentSort.filter(
-      (x) => x.content === conceptContent
-    );
+    let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
-    expect(result01.length).toEqual(1);
+    expect(conceptQueryResult.length).toEqual(1);
 
-    let ideaUt01 = result01[0];
-    let ideaUt02 = db.conceptIdMap.get(concept01Id)!;
+    let ideaUt01 = conceptQueryResult[0];
+    let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.parents.length).toEqual(3);
     expect(ideaUt02.parents.length).toEqual(3);
@@ -380,16 +359,14 @@ describe('InMemoryConceptDatabaseService', () => {
 
     concept01 = conceptSut.removeParentRelationship(concept01, ideaParent02.id);
 
-    expect(db.conceptLastId).toBe(1);
+    expect(db.conceptDbLength).toBe(1);
 
-    let result01 = db.conceptContentSort.filter(
-      (x) => x.content === conceptContent
-    );
+    let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
-    expect(result01.length).toEqual(1);
+    expect(conceptQueryResult.length).toEqual(1);
 
-    let ideaUt01 = result01[0];
-    let ideaUt02 = db.conceptIdMap.get(concept01Id)!;
+    let ideaUt01 = conceptQueryResult[0];
+    let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.parents.length).toEqual(1);
     expect(ideaUt02.parents.length).toEqual(1);
@@ -418,16 +395,14 @@ describe('InMemoryConceptDatabaseService', () => {
     concept02.tags = [];
     concept02 = conceptSut.saveConcept(concept02);
 
-    expect(db.conceptLastId).toBe(1);
+    expect(db.conceptDbLength).toBe(1);
 
-    let result01 = db.conceptContentSort.filter(
-      (x) => x.content === conceptContent
-    );
+    let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
-    expect(result01.length).toEqual(1);
+    expect(conceptQueryResult.length).toEqual(1);
 
-    let ideaUt01 = result01[0];
-    let ideaUt02 = db.conceptIdMap.get(concept01Id)!;
+    let ideaUt01 = conceptQueryResult[0];
+    let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.tags.length).toEqual(2);
     expect(ideaUt02.tags.length).toEqual(2);
@@ -460,16 +435,14 @@ describe('InMemoryConceptDatabaseService', () => {
     concept02.tags = [childTag03];
     concept02 = conceptSut.saveConcept(concept02);
 
-    expect(db.conceptLastId).toBe(1);
+    expect(db.conceptDbLength).toBe(1);
 
-    let result01 = db.conceptContentSort.filter(
-      (x) => x.content === conceptContent
-    );
+    let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
-    expect(result01.length).toEqual(1);
+    expect(conceptQueryResult.length).toEqual(1);
 
-    let ideaUt01 = result01[0];
-    let ideaUt02 = db.conceptIdMap.get(concept01Id)!;
+    let ideaUt01 = conceptQueryResult[0];
+    let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.tags.length).toEqual(3);
     expect(ideaUt02.tags.length).toEqual(3);
@@ -494,16 +467,14 @@ describe('InMemoryConceptDatabaseService', () => {
 
     concept01 = conceptSut.removeTagRelationship(concept01, tag02.id);
 
-    expect(db.conceptLastId).toBe(1);
+    expect(db.conceptDbLength).toBe(1);
 
-    let result01 = db.conceptContentSort.filter(
-      (x) => x.content === conceptContent
-    );
+    let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
-    expect(result01.length).toEqual(1);
+    expect(conceptQueryResult.length).toEqual(1);
 
-    let ideaUt01 = result01[0];
-    let ideaUt02 = db.conceptIdMap.get(concept01Id)!;
+    let ideaUt01 = conceptQueryResult[0];
+    let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.tags.length).toEqual(1);
     expect(ideaUt02.tags.length).toEqual(1);
@@ -555,17 +526,14 @@ describe('InMemoryConceptDatabaseService', () => {
     let concept = new Concept('content');
     conceptSut.saveConcept(concept);
 
-    expect(db.conceptLastId).toEqual(1);
-    expect(db.conceptIdMap.has(concept.id)).toBeTrue();
-    expect(
-      db.conceptContentSort.filter((x) => x.id === concept.id).length
-    ).toBe(1);
+    expect(db.conceptDbLength).toEqual(1);
+    expect(db.conceptExistById(concept.id)).toBeTrue();
+    expect(db.conceptExistByContent(concept.content)).toBeTrue();
 
     conceptSut.removeConcept(concept);
 
-    expect(db.conceptIdMap.has(concept.id)).toBeFalse();
-    expect(
-      db.conceptContentSort.filter((x) => x.id === concept.id).length
-    ).toBe(0);
+    expect(db.conceptExistById(concept.id)).toBeFalse();
+
+    expect(db.getConceptQueryByContent(concept.content).length).toBe(0);
   });
 });

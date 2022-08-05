@@ -6,31 +6,18 @@ import { InMemoryDatabaseService } from './in-memory-database.service';
   providedIn: 'root',
 })
 export class InMemoryTagDatabaseService {
-  tagExist(tag: Tag): boolean {
-    if (tag.id > 0) {
-      if (this.db.tagIdMap.has(tag.id)) {
-        return true;
-      }
-
-      throw new Error(`A Tag with id ${tag.id} does not exist.`);
-    }
-
-    return this.db.tagNameMap.has(tag.name.trim());
-  }
-
   insertTag(tag: Tag): Tag {
     let currentDate = new Date().getTime();
     tag.created = currentDate;
     tag.lasUpdated = currentDate;
-    this.db._saveTag(tag);
-    return tag;
+    let tagDb = this.db.setTagToIdMap(tag);
+    this.db.setTagToNameMap(tagDb);
+    return tagDb;
   }
 
   updateTag(tag: Tag): Tag {
     let existingTag =
-      tag.id > 0
-        ? this.db.tagIdMap.get(tag.id)!
-        : this.db.tagNameMap.get(tag.name)!;
+      tag.id > 0 ? this.db.getTagById(tag.id)! : this.db.getTagByName(tag.name);
 
     //existingTag.name = tag.name; <-- we are not going to do it here
     existingTag.isImportant = tag.isImportant;
@@ -59,38 +46,29 @@ export class InMemoryTagDatabaseService {
     });
 
     existingTag.lasUpdated = new Date().getTime();
-    this.db._saveTag(existingTag);
+    this.db.setTagToIdMap(existingTag);
+    this.db.setTagToNameMap(existingTag);
     return existingTag;
   }
 
   saveTag(tag: Tag): Tag {
     tag.concepts.forEach((concept) => {
-      if (!this.db.conceptIdMap.has(concept.id)) {
+      if (!this.db.conceptExistById(concept.id)) {
         throw new Error(`All concepts must have id.`);
       }
     });
 
     tag.ideas.forEach((idea) => {
-      if (!this.db.ideaIdMap.has(idea.id)) {
+      if (!this.db.ideaExistById(idea.id)) {
         throw new Error(`All ideas must have id.`);
       }
     });
 
-    if (this.tagExist(tag)) {
+    if (this._tagExist(tag)) {
       return this.updateTag(tag);
     }
 
     return this.insertTag(tag);
-  }
-
-  getTagFromDb(name: string): Tag {
-    if (this.db.tagNameMap.has(name)) {
-      return this.db.tagNameMap.get(name)!;
-    }
-
-    let newTag = new Tag(name);
-    this.db._saveTag(newTag);
-    return newTag;
   }
 
   getChildTag(tag: ChildTag): ChildTag {
@@ -101,8 +79,8 @@ export class InMemoryTagDatabaseService {
   }
 
   changeTagName(tag: Tag, newTagName: string): Tag {
-    if (this.db.tagIdMap.has(tag.id)) {
-      let tagDb = this.db.tagIdMap.get(tag.id)!;
+    if (this.db.tagExistById(tag.id)) {
+      let tagDb = this.db.getTagById(tag.id);
       tagDb.setName(newTagName);
       return tagDb;
     }
@@ -110,11 +88,11 @@ export class InMemoryTagDatabaseService {
   }
 
   removeIdeaRelationship(tag: Tag, parentId: number): Tag {
-    if (!this.tagExist(tag)) {
+    if (!this._tagExist(tag)) {
       return tag;
     }
 
-    let tagDb = this.db.tagIdMap.get(tag.id)!;
+    let tagDb = this.db.getTagById(tag.id);
 
     let resultList = tagDb.ideas.filter((x) => x.id === parentId);
 
@@ -130,11 +108,11 @@ export class InMemoryTagDatabaseService {
   }
 
   removeConceptRelationship(tag: Tag, conceptId: number): Tag {
-    if (!this.tagExist(tag)) {
+    if (!this._tagExist(tag)) {
       return tag;
     }
 
-    let tagDb = this.db.tagIdMap.get(tag.id)!;
+    let tagDb = this.db.getTagById(tag.id);
 
     let resultList = tagDb.concepts.filter((x) => x.id === conceptId);
 
@@ -150,11 +128,11 @@ export class InMemoryTagDatabaseService {
   }
 
   removeKeywordRelationship(tag: Tag, keyword: string): Tag {
-    if (!this.tagExist(tag)) {
+    if (!this._tagExist(tag)) {
       return tag;
     }
 
-    let tagDb = this.db.tagIdMap.get(tag.id)!;
+    let tagDb = this.db.getTagById(tag.id);
 
     let resultList = tagDb.keywords.filter((x) => x === keyword);
 
@@ -167,16 +145,21 @@ export class InMemoryTagDatabaseService {
     return tagDb;
   }
 
-  removeTag(tag: Tag): void {
-    if (!this.tagExist(tag)) {
-      return;
+  _tagExist(tag: Tag): boolean {
+    if (tag.id > 0) {
+      if (this.db.tagExistById(tag.id)) {
+        return true;
+      }
+
+      throw new Error(`A Tag with id ${tag.id} does not exist.`);
     }
 
-    let tagId = tag.id;
-    let tagName = tag.name;
+    return this.db.tagExistByName(tag.name);
+  }
 
-    this.db.tagIdMap.delete(tagId)!;
-    this.db.tagNameMap.delete(tagName)!;
+  removeTag(tag: Tag): void {
+    this.db.deleteTagFromMapId(tag);
+    this.db.deleteTagFromMapName(tag);
   }
 
   constructor(private db: InMemoryDatabaseService) {}

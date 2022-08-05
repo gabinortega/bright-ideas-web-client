@@ -36,12 +36,12 @@ describe('InMemoryTagDatabaseService', () => {
     let tag01 = new Tag('tag01');
     tagSut.saveTag(tag01);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
     let tag02 = new Tag('tag02');
     tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(2);
+    expect(db.tagDbLength).toEqual(2);
   });
 
   it('T03.01 Should save the Tag in the database after save it', () => {
@@ -49,7 +49,7 @@ describe('InMemoryTagDatabaseService', () => {
     let tag01 = new Tag(tag01Name);
     tagSut.saveTag(tag01);
 
-    expect(db.tagNameMap.has(tag01Name)).toBeTrue();
+    expect(db.tagExistByName(tag01Name)).toBeTrue();
   });
 
   it('T03.01.1 When saving a Tag Given an existing id Should update an existing Tag', () => {
@@ -77,9 +77,9 @@ describe('InMemoryTagDatabaseService', () => {
     tag03.priorityOrder = 6;
     tagSut.saveTag(tag03); // saving a new one with the same name
 
-    expect(db.tagIdMap.has(tagId)).toBeTrue();
+    expect(db.tagExistById(tagId)).toBeTrue();
 
-    let existingTag: any = db.tagIdMap.get(tagId);
+    let existingTag: any = db.getTagById(tagId);
 
     expect(existingTag.name).toEqual(name); // <-- we are not going to update the name here
     expect(existingTag.isUrgent).toBeTrue();
@@ -101,7 +101,7 @@ describe('InMemoryTagDatabaseService', () => {
       tagSut.saveTag(tag);
     }).toThrow(new Error(`A Tag with id ${ideaId} does not exist.`));
 
-    expect(db.ideaIdMap.has(ideaId)).toBeFalse();
+    expect(db.ideaExistById(ideaId)).toBeFalse();
   });
 
   it('T03.02.1.1 When saving a Tag Given no Id but and existing name Should update an existing Tag', () => {
@@ -119,11 +119,11 @@ describe('InMemoryTagDatabaseService', () => {
     tag2.priorityOrder = 6;
     tagSut.saveTag(tag2); // saving a new one with the same name
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(name)).toBeTrue();
+    expect(db.tagExistByName(name)).toBeTrue();
 
-    let existingTag: any = db.tagNameMap.get(name);
+    let existingTag: any = db.getTagByName(name);
 
     expect(existingTag.isUrgent).toBeTrue();
     expect(existingTag.isImportant).toBeTrue();
@@ -153,11 +153,11 @@ describe('InMemoryTagDatabaseService', () => {
     tag2.priorityOrder = 6;
     tagSut.saveTag(tag2); // saving a new one with the same name plus spaces, plus returns
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(name)).toBeTrue();
+    expect(db.tagExistByName(name)).toBeTrue();
 
-    let existingTag: any = db.tagNameMap.get(name);
+    let existingTag: any = db.getTagByName(name);
 
     expect(existingTag.isUrgent).toBeTrue();
     expect(existingTag.isImportant).toBeTrue();
@@ -169,7 +169,7 @@ describe('InMemoryTagDatabaseService', () => {
     let tag01 = new Tag(tag01Name);
     tagSut.saveTag(tag01);
 
-    expect(db.tagNameMap.has(tag01Name)).toBeTrue();
+    expect(db.tagExistByName(tag01Name)).toBeTrue();
   });
 
   it('T03.03.3.1.1 When Saving a Tag Given an Idea being removed should not remove the idea', () => {
@@ -193,13 +193,13 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.ideas = [];
     tag02 = tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
-    expect(db.tagIdMap.has(tag01Id)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.tagExistById(tag01Id)).toBeTrue();
 
-    let tagResult01: any = db.tagNameMap.get(tagName);
-    let tagResult02: any = db.tagIdMap.get(tag01Id);
+    let tagResult01: any = db.getTagByName(tagName);
+    let tagResult02: any = db.getTagById(tag01Id);
 
     expect(tagResult01.ideas.length).toEqual(2);
     expect(tagResult02.ideas.length).toEqual(2);
@@ -230,12 +230,12 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.ideas = [childIdea03];
     tag02 = tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01: any = db.tagNameMap.get(tagName);
-    let ideaUt02: any = db.tagIdMap.get(tag01Id);
+    let ideaUt01: any = db.getTagByName(tagName);
+    let ideaUt02: any = db.getTagById(tag01Id);
 
     expect(ideaUt01.ideas.length).toEqual(3);
     expect(ideaUt02.ideas.length).toEqual(3);
@@ -259,13 +259,13 @@ describe('InMemoryTagDatabaseService', () => {
 
     tag01 = tagSut.removeIdeaRelationship(tag01, childIdea01.id);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
-    expect(db.tagIdMap.has(tag01Id)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.tagExistById(tag01Id)).toBeTrue();
 
-    let tagResult01: any = db.tagNameMap.get(tagName);
-    let tagResult02: any = db.tagIdMap.get(tag01Id);
+    let tagResult01: any = db.getTagByName(tagName);
+    let tagResult02: any = db.getTagById(tag01Id);
 
     expect(tagResult01.ideas.length).toEqual(1);
     expect(tagResult02.ideas.length).toEqual(1);
@@ -292,12 +292,12 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.concepts = [];
     tag02 = tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01 = db.tagNameMap.get(tagName)!;
-    let ideaUt02 = db.tagIdMap.get(tag01Id)!;
+    let ideaUt01 = db.getTagByName(tagName);
+    let ideaUt02 = db.getTagById(tag01Id);
 
     expect(ideaUt01.concepts.length).toEqual(2);
     expect(ideaUt02.concepts.length).toEqual(2);
@@ -328,12 +328,12 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.concepts = [concept03];
     tag02 = tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01 = db.tagNameMap.get(tagName)!;
-    let ideaUt02 = db.tagIdMap.get(tag01Id)!;
+    let ideaUt01 = db.getTagByName(tagName);
+    let ideaUt02 = db.getTagById(tag01Id);
 
     expect(ideaUt01.concepts.length).toEqual(3);
     expect(ideaUt02.concepts.length).toEqual(3);
@@ -357,12 +357,12 @@ describe('InMemoryTagDatabaseService', () => {
 
     tag01 = tagSut.removeConceptRelationship(tag01, concept01.id);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01 = db.tagNameMap.get(tagName)!;
-    let ideaUt02 = db.tagIdMap.get(tag01Id)!;
+    let ideaUt01 = db.getTagByName(tagName);
+    let ideaUt02 = db.getTagById(tag01Id);
 
     expect(ideaUt01.concepts.length).toEqual(1);
     expect(ideaUt02.concepts.length).toEqual(1);
@@ -384,12 +384,12 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.keywords = [];
     tag02 = tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01 = db.tagNameMap.get(tagName)!;
-    let ideaUt02 = db.tagIdMap.get(tag01Id)!;
+    let ideaUt01 = db.getTagByName(tagName);
+    let ideaUt02 = db.getTagById(tag01Id);
 
     expect(ideaUt01.keywords.length).toEqual(2);
     expect(ideaUt02.keywords.length).toEqual(2);
@@ -412,12 +412,12 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.keywords = [keyword03];
     tag02 = tagSut.saveTag(tag02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01 = db.tagNameMap.get(tagName)!;
-    let ideaUt02 = db.tagIdMap.get(tag01Id)!;
+    let ideaUt01 = db.getTagByName(tagName);
+    let ideaUt02 = db.getTagById(tag01Id);
 
     expect(ideaUt01.keywords.length).toEqual(3);
     expect(ideaUt02.keywords.length).toEqual(3);
@@ -436,12 +436,12 @@ describe('InMemoryTagDatabaseService', () => {
 
     tag01 = tagSut.removeKeywordRelationship(tag01, keyword02);
 
-    expect(db.tagLastId).toEqual(1);
+    expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagNameMap.has(tagName)).toBeTrue();
+    expect(db.tagExistByName(tagName)).toBeTrue();
 
-    let ideaUt01 = db.tagNameMap.get(tagName)!;
-    let ideaUt02 = db.tagIdMap.get(tag01Id)!;
+    let ideaUt01 = db.getTagByName(tagName);
+    let ideaUt02 = db.getTagById(tag01Id);
 
     expect(ideaUt01.keywords.length).toEqual(1);
     expect(ideaUt02.keywords.length).toEqual(1);
@@ -499,7 +499,7 @@ describe('InMemoryTagDatabaseService', () => {
     tag02.id = tag01Id;
     tag02 = tagSut.saveTag(tag02);
 
-    let ideaUt = db.tagIdMap.get(tag01Id)!;
+    let ideaUt = db.getTagById(tag01Id);
 
     expect(ideaUt.name).toEqual(tagName);
   });
@@ -512,11 +512,11 @@ describe('InMemoryTagDatabaseService', () => {
     tag01 = tagSut.saveTag(tag01);
     let tag01Id = tag01.id;
 
-    expect(db.tagLastId).toBe(1);
+    expect(db.tagDbLength).toBe(1);
 
     tagSut.changeTagName(tag01, newTagName);
 
-    let ideaUt = db.tagIdMap.get(tag01Id)!;
+    let ideaUt = db.getTagById(tag01Id);
 
     expect(ideaUt.name).toEqual(newTagName);
   });
@@ -536,9 +536,9 @@ describe('InMemoryTagDatabaseService', () => {
     tag2.isUrgent = true;
     tagSut.saveTag(tag2); // saving a new one with the same id and different tagName
 
-    expect(db.tagIdMap.has(ideaId)).toBeTrue();
+    expect(db.tagExistById(ideaId)).toBeTrue();
 
-    let existingTag = db.tagIdMap.get(ideaId)!;
+    let existingTag = db.getTagById(ideaId);
 
     expect(existingTag.name).toEqual(tagName); // <-- tag must still the same
     expect(existingTag.isUrgent).toBeTrue();
@@ -548,13 +548,13 @@ describe('InMemoryTagDatabaseService', () => {
     let tag = new Tag('tagName');
     tagSut.saveTag(tag);
 
-    expect(db.tagLastId).toEqual(1);
-    expect(db.tagIdMap.has(tag.id)).toBeTrue();
-    expect(db.tagNameMap.has(tag.name)).toBeTrue();
+    expect(db.tagDbLength).toEqual(1);
+    expect(db.tagExistById(tag.id)).toBeTrue();
+    expect(db.tagExistByName(tag.name)).toBeTrue();
 
     tagSut.removeTag(tag);
 
-    expect(db.tagIdMap.has(tag.id)).toBeFalse();
-    expect(db.tagNameMap.has(tag.name)).toBeFalse();
+    expect(db.tagExistById(tag.id)).toBeFalse();
+    expect(db.tagExistByName(tag.name)).toBeFalse();
   });
 });

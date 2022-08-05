@@ -32,7 +32,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     let idea = new Idea('topic01');
     ideaSut.saveIdea(idea);
 
-    expect(db.ideaLastId).toEqual(1);
+    expect(db.ideaDbLength).toEqual(1);
   });
 
   it('T01.01.1 When saving an Idea Given an existing id Should update an existing Idea', () => {
@@ -65,9 +65,9 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea2.type = 6;
     ideaSut.saveIdea(idea2); // saving a new one with the same topic
 
-    expect(db.ideaIdMap.has(ideaId)).toBeTrue();
+    expect(db.ideaExistById(ideaId)).toBeTrue();
 
-    let existingIdea = db.ideaIdMap.get(ideaId)!;
+    let existingIdea = db.getIdeaById(ideaId);
 
     expect(existingIdea.topic).toEqual(topic); // <-- topic must still the same
     expect(existingIdea.isUrgent).toBeTrue();
@@ -93,7 +93,7 @@ describe('InMemoryIdeaDatabaseService', () => {
       ideaSut.saveIdea(idea);
     }).toThrow(new Error(`An Idea with id ${ideaId} does not exist.`));
 
-    expect(db.ideaIdMap.has(ideaId)).toBeFalse();
+    expect(db.ideaExistById(ideaId)).toBeFalse();
   });
 
   it('T01.02.1 When saving an Idea Given no Id but an existing topic Should update an existing Idea', () => {
@@ -115,9 +115,9 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea2.type = 6;
     ideaSut.saveIdea(idea2); // saving a new one with the same topic
 
-    expect(db.ideaTopicMap.has(topic)).toBeTrue();
+    expect(db.ideaExistByTopic(topic)).toBeTrue();
 
-    let existingIdea = db.ideaTopicMap.get(topic)!;
+    let existingIdea = db.getIdeaByTopic(topic);
 
     expect(existingIdea.isUrgent).toBeTrue();
     expect(existingIdea.isImportant).toBeTrue();
@@ -155,7 +155,7 @@ describe('InMemoryIdeaDatabaseService', () => {
 
     ideaSut.saveIdea(idea);
 
-    let ideaUt = db.ideaTopicMap.get(topic)!;
+    let ideaUt = db.getIdeaByTopic(topic);
 
     expect(ideaUt.concepts.length).toBe(1);
     expect(ideaUt.concepts[0].id).toBe(conceptId);
@@ -188,7 +188,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea01.parents = [childIdea01, childIdea02];
     idea01 = ideaSut.saveIdea(idea01);
 
-    expect(db.ideaLastId).toBe(3);
+    expect(db.ideaDbLength).toBe(3);
     let idea01Id = idea01.id;
 
     let idea02 = new Idea(ideaTopic);
@@ -196,10 +196,10 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea02.parents = [];
     idea02 = ideaSut.saveIdea(idea02);
 
-    expect(db.ideaLastId).toBe(3);
+    expect(db.ideaDbLength).toBe(3);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.parents.length).toEqual(2);
     expect(ideaUt02.parents.length).toEqual(2);
@@ -230,10 +230,10 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea02.parents = [childIdea03];
     idea02 = ideaSut.saveIdea(idea02);
 
-    expect(db.ideaLastId).toBe(4);
+    expect(db.ideaDbLength).toBe(4);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.parents.length).toEqual(3);
     expect(ideaUt02.parents.length).toEqual(3);
@@ -256,15 +256,15 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea01.parents = [childIdea01, childIdea02];
     idea01 = ideaSut.saveIdea(idea01);
 
-    expect(db.ideaLastId).toBe(3);
+    expect(db.ideaDbLength).toBe(3);
     let idea01Id = idea01.id;
 
     idea01 = ideaSut.removeParentRelationship(idea01, ideaParent02.id);
 
-    expect(db.ideaLastId).toBe(3);
+    expect(db.ideaDbLength).toBe(3);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.parents.length).toEqual(1);
     expect(ideaUt02.parents.length).toEqual(1);
@@ -291,10 +291,10 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea02.concepts = [];
     idea02 = ideaSut.saveIdea(idea02);
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.concepts.length).toEqual(2);
     expect(ideaUt02.concepts.length).toEqual(2);
@@ -325,10 +325,10 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea02.concepts = [concept03];
     idea02 = ideaSut.saveIdea(idea02);
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.concepts.length).toEqual(3);
     expect(ideaUt02.concepts.length).toEqual(3);
@@ -352,10 +352,10 @@ describe('InMemoryIdeaDatabaseService', () => {
 
     idea01 = ideaSut.removeConceptRelationship(idea01, concept02.id);
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.concepts.length).toEqual(1);
     expect(ideaUt02.concepts.length).toEqual(1);
@@ -382,10 +382,10 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea02.tags = [];
     idea02 = ideaSut.saveIdea(idea02);
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.tags.length).toEqual(2);
     expect(ideaUt02.tags.length).toEqual(2);
@@ -416,10 +416,10 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea02.tags = [childTag03];
     idea02 = ideaSut.saveIdea(idea02);
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.tags.length).toEqual(3);
     expect(ideaUt02.tags.length).toEqual(3);
@@ -443,10 +443,10 @@ describe('InMemoryIdeaDatabaseService', () => {
 
     idea01 = ideaSut.removeTagRelationship(idea01, tag01.id);
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
-    let ideaUt01 = db.ideaTopicMap.get(ideaTopic)!;
-    let ideaUt02 = db.ideaIdMap.get(idea01Id)!;
+    let ideaUt01 = db.getIdeaByTopic(ideaTopic);
+    let ideaUt02 = db.getIdeaById(idea01Id);
 
     expect(ideaUt01.tags.length).toEqual(1);
     expect(ideaUt02.tags.length).toEqual(1);
@@ -521,11 +521,11 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea = ideaSut.saveIdea(idea);
     let ideaId = idea.id;
 
-    expect(db.ideaLastId).toBe(1);
+    expect(db.ideaDbLength).toBe(1);
 
     ideaSut.changeTopicName(idea, newTopicName);
 
-    let ideaUt = db.ideaIdMap.get(ideaId)!;
+    let ideaUt = db.getIdeaById(ideaId);
     expect(ideaUt.topic).toEqual(newTopicName);
   });
 
@@ -554,9 +554,9 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea2.type = 6;
     ideaSut.saveIdea(idea2); // saving a new one with the topic
 
-    expect(db.ideaIdMap.has(ideaId)).toBeTrue();
+    expect(db.ideaExistById(ideaId)).toBeTrue();
 
-    let existingIdea = db.ideaIdMap.get(ideaId)!;
+    let existingIdea = db.getIdeaById(ideaId);
 
     expect(existingIdea.topic).toEqual(topic); // <-- topic must still the same
     expect(existingIdea.isUrgent).toBeTrue();
@@ -568,13 +568,13 @@ describe('InMemoryIdeaDatabaseService', () => {
     let idea = new Idea('topic01');
     ideaSut.saveIdea(idea);
 
-    expect(db.ideaLastId).toEqual(1);
-    expect(db.ideaIdMap.has(idea.id)).toBeTrue();
-    expect(db.ideaTopicMap.has(idea.topic)).toBeTrue();
+    expect(db.ideaDbLength).toEqual(1);
+    expect(db.ideaExistById(idea.id)).toBeTrue();
+    expect(db.ideaExistByTopic(idea.topic)).toBeTrue();
 
     ideaSut.removeIdea(idea);
 
-    expect(db.ideaIdMap.has(idea.id)).toBeFalse();
-    expect(db.ideaTopicMap.has(idea.topic)).toBeFalse();
+    expect(db.ideaExistById(idea.id)).toBeFalse();
+    expect(db.ideaExistByTopic(idea.topic)).toBeFalse();
   });
 });

@@ -7,16 +7,16 @@ import { Idea } from '../shared/idea';
   providedIn: 'root',
 })
 export class InMemoryIdeaDatabaseService {
-  ideaExist(idea: Idea): boolean {
+  _ideaExist(idea: Idea): boolean {
     if (idea.id > 0) {
-      if (this.db.ideaIdMap.has(idea.id)) {
+      if (this.db.ideaExistById(idea.id)) {
         return true;
       }
 
       throw new Error(`An Idea with id ${idea.id} does not exist.`);
     }
 
-    if (this.db.ideaTopicMap.has(idea.topic.trim())) {
+    if (this.db.ideaExistByTopic(idea.topic)) {
       return true;
     }
 
@@ -28,15 +28,16 @@ export class InMemoryIdeaDatabaseService {
     idea.created = currentDate;
     idea.lasUpdated = currentDate;
 
-    this.db._saveIdea(idea);
-    return idea;
+    let ideaDb = this.db.setIdeaToIdMap(idea);
+    this.db.setIdeaToNameMap(ideaDb);
+    return ideaDb;
   }
 
   updateIdea(idea: Idea): Idea {
     let existingIdea =
       idea.id > 0
-        ? this.db.ideaIdMap.get(idea.id)!
-        : this.db.ideaTopicMap.get(idea.topic)!;
+        ? this.db.getIdeaById(idea.id)!
+        : this.db.getIdeaByTopic(idea.topic);
 
     existingIdea.isImportant = idea.isImportant;
     existingIdea.isUrgent = idea.isUrgent;
@@ -70,30 +71,31 @@ export class InMemoryIdeaDatabaseService {
     // existingIdea.created is not going to be updated here.
     existingIdea.lasUpdated = currentDate;
 
-    this.db._saveIdea(existingIdea);
+    this.db.setIdeaToIdMap(existingIdea);
+    this.db.setIdeaToNameMap(existingIdea);
     return existingIdea;
   }
 
   saveIdea(idea: Idea): Idea {
     idea.tags.forEach((tag) => {
-      if (!this.db.tagIdMap.has(tag.id)) {
+      if (!this.db.tagExistById(tag.id)) {
         throw new Error(`All tags must have id.`);
       }
     });
 
     idea.concepts.forEach((concept) => {
-      if (!this.db.conceptIdMap.has(concept.id)) {
+      if (!this.db.conceptExistById(concept.id)) {
         throw new Error(`All child concepts must have id.`);
       }
     });
 
     idea.parents.forEach((parent) => {
-      if (!this.db.ideaIdMap.has(parent.id)) {
+      if (!this.db.ideaExistById(parent.id)) {
         throw new Error(`All parents must have id.`);
       }
     });
 
-    if (this.ideaExist(idea)) {
+    if (this._ideaExist(idea)) {
       return this.updateIdea(idea);
     }
     return this.insertIdea(idea);
@@ -107,8 +109,8 @@ export class InMemoryIdeaDatabaseService {
   }
 
   changeTopicName(idea: Idea, newTopic: string): Idea {
-    if (this.db.ideaIdMap.has(idea.id)) {
-      let ideaDb = this.db.ideaIdMap.get(idea.id)!;
+    if (this.db.ideaExistById(idea.id)) {
+      let ideaDb = this.db.getIdeaById(idea.id);
       ideaDb.setTopic(newTopic);
       return ideaDb;
     }
@@ -116,11 +118,11 @@ export class InMemoryIdeaDatabaseService {
   }
 
   removeParentRelationship(idea: Idea, parentId: number): Idea {
-    if (!this.ideaExist(idea)) {
+    if (!this._ideaExist(idea)) {
       return idea;
     }
 
-    let ideaDb = this.db.ideaIdMap.get(idea.id)!;
+    let ideaDb = this.db.getIdeaById(idea.id);
 
     let resultList = ideaDb.parents.filter((x) => x.id === parentId);
 
@@ -134,11 +136,11 @@ export class InMemoryIdeaDatabaseService {
   }
 
   removeConceptRelationship(idea: Idea, conceptId: number): Idea {
-    if (!this.ideaExist(idea)) {
+    if (!this._ideaExist(idea)) {
       return idea;
     }
 
-    let ideaDb = this.db.ideaIdMap.get(idea.id)!;
+    let ideaDb = this.db.getIdeaById(idea.id);
 
     let resultList = ideaDb.concepts.filter((x) => x.id === conceptId);
 
@@ -154,11 +156,11 @@ export class InMemoryIdeaDatabaseService {
   }
 
   removeTagRelationship(idea: Idea, tagId: number): Idea {
-    if (!this.ideaExist(idea)) {
+    if (!this._ideaExist(idea)) {
       return idea;
     }
 
-    let ideaDb = this.db.ideaIdMap.get(idea.id)!;
+    let ideaDb = this.db.getIdeaById(idea.id);
 
     let resultList = ideaDb.tags.filter((x) => x.id === tagId);
 
@@ -172,15 +174,12 @@ export class InMemoryIdeaDatabaseService {
   }
 
   removeIdea(idea: Idea): void {
-    if (!this.ideaExist(idea)) {
+    if (!this._ideaExist(idea)) {
       return;
     }
 
-    let ideaId = idea.id;
-    let ideaTopic = idea.topic;
-
-    this.db.ideaIdMap.delete(ideaId)!;
-    this.db.ideaTopicMap.delete(idea.topic)!;
+    this.db.deleteIdeaFromMapId(idea);
+    this.db.deleteIdeaFromMapTopic(idea);
   }
 
   constructor(private db: InMemoryDatabaseService) {}
