@@ -1,0 +1,24 @@
+<div class="row">
+  <div class="col-md-3"></div>
+  <div class="col-md-5">
+    <ng-select [items]="listOfTags | async" [multiple]="true" bindLabel="name" (change)="onSearch($event)"
+      [(ngModel)]="listOfTagsToSearch" autofocus>
+    </ng-select>
+  </div>
+  <div class="col-md-1">
+    <a class="btn btn-primary" [routerLink]="['/edit']">
+      <i class="bi bi-plus-lg"></i>
+    </a>
+  </div>
+  <div class="col-md-3 invisible">
+    <small id="dbVersion" class="font-weight-lighter font-italic" [innerText]="dbVersion">
+    </small>
+  </div>
+</div>
+
+<div>
+  <div *ngFor="let idea of listOfIdeas">
+    {{ idea.name }}
+    <!--<app-view-snippet #snippetIndex [dbSnippet]="dbItem"></app-view-snippet>-->
+  </div>
+</div>
