@@ -7,6 +7,12 @@ export class Tag {
   concepts: ChildConcept[] = [];
   label: string = '';
   keywords: string[] = [];
+  priorityOrder: number = 0;
+  isImportant: boolean = false;
+  isUrgent: boolean = false;
+  created: number = 0;
+  lasUpdated: number = 0;
+
   private _name: string;
 
   get name(): string {
@@ -20,11 +26,6 @@ export class Tag {
   constructor(tagName: string) {
     this._name = tagName.trim();
   }
-  priorityOrder: number = 0;
-  isImportant: boolean = false;
-  isUrgent: boolean = false;
-  created: number = 0;
-  lasUpdated: number = 0;
 }
 
 export class ChildTag {

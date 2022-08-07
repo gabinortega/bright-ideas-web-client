@@ -2,6 +2,7 @@ import { ChildIdea } from './../shared/idea';
 import { InMemoryDatabaseService } from './in-memory-database.service';
 import { Injectable } from '@angular/core';
 import { Idea } from '../shared/idea';
+import { HistoricService } from './historic.service';
 
 @Injectable({
   providedIn: 'root',
@@ -9,18 +10,13 @@ import { Idea } from '../shared/idea';
 export class InMemoryIdeaDatabaseService {
   _ideaExist(idea: Idea): boolean {
     if (idea.id > 0) {
-      if (this.db.ideaExistById(idea.id)) {
+      if (this.db.flagIdeaExistById(idea.id)) {
         return true;
       }
-
       throw new Error(`An Idea with id ${idea.id} does not exist.`);
     }
 
-    if (this.db.ideaExistByTopic(idea.topic)) {
-      return true;
-    }
-
-    return false;
+    return this.db.flagIdeaExistByTopic(idea.topic);
   }
 
   insertIdea(idea: Idea): Idea {
@@ -29,7 +25,7 @@ export class InMemoryIdeaDatabaseService {
     idea.lasUpdated = currentDate;
 
     let ideaDb = this.db.setIdeaToIdMap(idea);
-    this.db.setIdeaToNameMap(ideaDb);
+    this.db.setIdeaToTopicMap(ideaDb);
     return ideaDb;
   }
 
@@ -67,30 +63,31 @@ export class InMemoryIdeaDatabaseService {
       }
     });
 
+    this.history.saveIdea(existingIdea.id);
     let currentDate = new Date().getTime();
     // existingIdea.created is not going to be updated here.
-    existingIdea.lasUpdated = currentDate;
 
+    existingIdea.lasUpdated = currentDate;
     this.db.setIdeaToIdMap(existingIdea);
-    this.db.setIdeaToNameMap(existingIdea);
+    this.db.setIdeaToTopicMap(existingIdea);
     return existingIdea;
   }
 
   saveIdea(idea: Idea): Idea {
     idea.tags.forEach((tag) => {
-      if (!this.db.tagExistById(tag.id)) {
+      if (!this.db.flagTagExistById(tag.id)) {
         throw new Error(`All tags must have id.`);
       }
     });
 
     idea.concepts.forEach((concept) => {
-      if (!this.db.conceptExistById(concept.id)) {
+      if (!this.db.flagConceptExistById(concept.id)) {
         throw new Error(`All child concepts must have id.`);
       }
     });
 
     idea.parents.forEach((parent) => {
-      if (!this.db.ideaExistById(parent.id)) {
+      if (!this.db.flagIdeaExistById(parent.id)) {
         throw new Error(`All parents must have id.`);
       }
     });
@@ -109,10 +106,15 @@ export class InMemoryIdeaDatabaseService {
   }
 
   changeTopicName(idea: Idea, newTopic: string): Idea {
-    if (this.db.ideaExistById(idea.id)) {
-      let ideaDb = this.db.getIdeaById(idea.id);
-      ideaDb.setTopic(newTopic);
-      return ideaDb;
+    if (this.db.flagIdeaExistById(idea.id)) {
+      let existingIdea = this.db.getIdeaById(idea.id);
+      existingIdea.setTopic(newTopic);
+
+      this.history.saveIdea(existingIdea.id);
+      existingIdea.lasUpdated = new Date().getTime();
+      let result = this.db.setIdeaToIdMap(existingIdea);
+      this.db.setIdeaToTopicMap(existingIdea);
+      return result;
     }
     throw new Error(`An Idea with id ${idea.id} does not exist.`);
   }
@@ -122,17 +124,24 @@ export class InMemoryIdeaDatabaseService {
       return idea;
     }
 
-    let ideaDb = this.db.getIdeaById(idea.id);
+    let existingIdea = this.db.getIdeaById(idea.id);
 
-    let resultList = ideaDb.parents.filter((x) => x.id === parentId);
+    let resultList = existingIdea.parents.filter((x) => x.id === parentId);
 
     if (resultList.length < 1) {
       console.log(`Nothing to remove. No parent with id ${parentId}`);
-      return ideaDb;
+      return existingIdea;
     }
 
-    ideaDb.parents = ideaDb.parents.filter((x) => x.id !== parentId);
-    return ideaDb;
+    existingIdea.parents = existingIdea.parents.filter(
+      (x) => x.id !== parentId
+    );
+
+    this.history.saveIdea(existingIdea.id);
+    existingIdea.lasUpdated = new Date().getTime();
+    let result = this.db.setIdeaToIdMap(existingIdea);
+    this.db.setIdeaToTopicMap(existingIdea);
+    return result;
   }
 
   removeConceptRelationship(idea: Idea, conceptId: number): Idea {
@@ -140,19 +149,26 @@ export class InMemoryIdeaDatabaseService {
       return idea;
     }
 
-    let ideaDb = this.db.getIdeaById(idea.id);
+    let existingIdea = this.db.getIdeaById(idea.id);
 
-    let resultList = ideaDb.concepts.filter((x) => x.id === conceptId);
+    let resultList = existingIdea.concepts.filter((x) => x.id === conceptId);
 
     if (resultList.length < 1) {
       console.log(
         `Nothing to remove. No Concept relationship with id ${conceptId}`
       );
-      return ideaDb;
+      return existingIdea;
     }
 
-    ideaDb.concepts = ideaDb.concepts.filter((x) => x.id !== conceptId);
-    return ideaDb;
+    existingIdea.concepts = existingIdea.concepts.filter(
+      (x) => x.id !== conceptId
+    );
+
+    this.history.saveIdea(existingIdea.id);
+    existingIdea.lasUpdated = new Date().getTime();
+    let result = this.db.setIdeaToIdMap(existingIdea);
+    this.db.setIdeaToTopicMap(existingIdea);
+    return result;
   }
 
   removeTagRelationship(idea: Idea, tagId: number): Idea {
@@ -160,17 +176,22 @@ export class InMemoryIdeaDatabaseService {
       return idea;
     }
 
-    let ideaDb = this.db.getIdeaById(idea.id);
+    let existingIdea = this.db.getIdeaById(idea.id);
 
-    let resultList = ideaDb.tags.filter((x) => x.id === tagId);
+    let resultList = existingIdea.tags.filter((x) => x.id === tagId);
 
     if (resultList.length < 1) {
       console.log(`Nothing to remove. No Tag relationship with id ${tagId}`);
-      return ideaDb;
+      return existingIdea;
     }
 
-    ideaDb.tags = ideaDb.tags.filter((x) => x.id !== tagId);
-    return ideaDb;
+    existingIdea.tags = existingIdea.tags.filter((x) => x.id !== tagId);
+
+    this.history.saveIdea(existingIdea.id);
+    existingIdea.lasUpdated = new Date().getTime();
+    let result = this.db.setIdeaToIdMap(existingIdea);
+    this.db.setIdeaToTopicMap(existingIdea);
+    return result;
   }
 
   removeIdea(idea: Idea): void {
@@ -182,5 +203,8 @@ export class InMemoryIdeaDatabaseService {
     this.db.deleteIdeaFromMapTopic(idea);
   }
 
-  constructor(private db: InMemoryDatabaseService) {}
+  constructor(
+    private db: InMemoryDatabaseService,
+    private history: HistoricService
+  ) {}
 }

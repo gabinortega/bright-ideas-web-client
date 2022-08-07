@@ -1,5 +1,4 @@
-import { InMemoryConceptDatabaseService } from './in-memory-concept-database.service';
-import { InMemoryIdeaDatabaseService } from './in-memory-idea-database.service';
+import { CopyService } from './copy.service';
 import { TagKeywords } from './../shared/tag';
 import { Injectable } from '@angular/core';
 import { Concept } from '../shared/concept';
@@ -20,13 +19,29 @@ export class InMemoryDatabaseService {
   private conceptContentSort: Concept[] = [];
 
   private tagKeywords: TagKeywords[] = [];
-  private tagHistory: Tag[] = [];
-  private conceptHistory: Tag[] = [];
-  private ideaHistory: Tag[] = [];
+
+  private tagHistories = new Map<number, any[]>();
+  private conceptHistories = new Map<number, any[]>();
+  private ideaHistories = new Map<number, any[]>();
 
   private _ideaLastId: number = 0;
   private _conceptLastId: number = 0;
   private _tagLastId: number = 0;
+
+  public getTagHistory(tagId: number): Tag[] {
+    let result = this.tagHistories.get(tagId)!;
+    return this.copyService.getTagLisCopy(result);
+  }
+
+  public getIdeaHistory(ideaId: number): Idea[] {
+    let result = this.ideaHistories.get(ideaId)!;
+    return this.copyService.getIdeaLisCopy(result);
+  }
+
+  public getConceptHistory(conceptId: number): Concept[] {
+    let result = this.conceptHistories.get(conceptId)!;
+    return this.copyService.getConceptLisCopy(result);
+  }
 
   public get ideaDbLength(): number {
     if (this.ideaIdMap.size !== this.ideaTopicMap.size) {
@@ -52,6 +67,29 @@ export class InMemoryDatabaseService {
     return this.tagIdMap.size;
   }
 
+  public pushIdeaToHistoric(ideaId: number, idea: Idea): void {
+    if (!this.ideaHistories.has(ideaId)) {
+      this.ideaHistories.set(ideaId, []);
+    }
+    this.ideaHistories.get(ideaId)?.push(this.copyService.getIdeaCopy(idea));
+  }
+
+  public pushConceptToHistoric(conceptId: number, concept: Concept): void {
+    if (!this.conceptHistories.has(conceptId)) {
+      this.conceptHistories.set(conceptId, []);
+    }
+    this.conceptHistories
+      .get(conceptId)
+      ?.push(this.copyService.getConceptCopy(concept));
+  }
+
+  public pushTagToHistoric(tagId: number, tag: Tag): void {
+    if (!this.tagHistories.has(tagId)) {
+      this.tagHistories.set(tagId, []);
+    }
+    this.tagHistories.get(tagId)?.push(this.copyService.getTagCopy(tag));
+  }
+
   public setIdeaToIdMap(idea: Idea): Idea {
     if (!idea.id) {
       idea.id = this.getNextIdeaId();
@@ -59,18 +97,18 @@ export class InMemoryDatabaseService {
     if (!idea.topic.trim()) {
       throw new Error('Idea Topic must not be blank.');
     }
-    this.ideaIdMap.set(idea.id, idea);
+    this.ideaIdMap.set(idea.id, this.copyService.getIdeaCopy(idea));
     return idea;
   }
 
-  public setIdeaToNameMap(idea: Idea): Idea {
+  public setIdeaToTopicMap(idea: Idea): Idea {
     if (!idea.id) {
       throw new Error('Idea Id must not be zero.');
     }
     if (!idea.topic.trim()) {
       throw new Error('Idea Topic must not be blank.');
     }
-    this.ideaTopicMap.set(idea.topic, idea);
+    this.ideaTopicMap.set(idea.topic, this.copyService.getIdeaCopy(idea));
     return idea;
   }
 
@@ -81,7 +119,7 @@ export class InMemoryDatabaseService {
     if (!tag.name.trim()) {
       throw new Error('Tag name must not be blank.');
     }
-    this.tagIdMap.set(tag.id, tag);
+    this.tagIdMap.set(tag.id, this.copyService.getTagCopy(tag));
     return tag;
   }
 
@@ -92,7 +130,7 @@ export class InMemoryDatabaseService {
     if (!tag.name.trim()) {
       throw new Error('Tag name must not be blank.');
     }
-    this.tagNameMap.set(tag.name, tag);
+    this.tagNameMap.set(tag.name, this.copyService.getTagCopy(tag));
     return tag;
   }
 
@@ -103,7 +141,7 @@ export class InMemoryDatabaseService {
     if (!concept.content.trim()) {
       throw new Error('Concept content must not be blank.');
     }
-    this.conceptIdMap.set(concept.id, concept);
+    this.conceptIdMap.set(concept.id, this.copyService.getConceptCopy(concept));
     return concept;
   }
 
@@ -114,7 +152,7 @@ export class InMemoryDatabaseService {
     if (!concept.content.trim()) {
       throw new Error('Concept name must not be blank.');
     }
-    this.conceptContentSort.push(concept);
+    this.conceptContentSort.push(this.copyService.getConceptCopy(concept));
     return concept;
   }
 
@@ -137,64 +175,72 @@ export class InMemoryDatabaseService {
       )[0];
 
       let index = this.conceptContentSort.indexOf(oldConcept);
-      this.conceptContentSort.splice(index, 1, concept);
+      this.conceptContentSort.splice(
+        index,
+        1,
+        this.copyService.getConceptCopy(concept)
+      );
     } else {
-      this.conceptContentSort.push(concept);
+      this.conceptContentSort.push(this.copyService.getConceptCopy(concept));
     }
 
     return concept;
   }
 
-  tagExistById(id: number): boolean {
+  public flagTagExistById(id: number): boolean {
     return this.tagIdMap.has(id);
   }
 
-  tagExistByName(name: string): boolean {
+  public flagTagExistByName(name: string): boolean {
     return this.tagNameMap.has(name);
   }
 
-  ideaExistById(id: number): boolean {
+  public flagIdeaExistById(id: number): boolean {
     return this.ideaIdMap.has(id);
   }
 
-  ideaExistByTopic(name: string): boolean {
+  public flagIdeaExistByTopic(name: string): boolean {
     return this.ideaTopicMap.has(name);
   }
 
-  conceptExistById(id: number): boolean {
+  public flagConceptExistById(id: number): boolean {
     return this.conceptIdMap.has(id);
   }
 
-  conceptExistByContent(content: string): boolean {
+  public flagConceptExistByContent(content: string): boolean {
     let searchTerm = content.trim();
     return (
       this.conceptContentSort.filter((x) => x.content === searchTerm).length > 0
     );
   }
 
-  getTagById(id: number): Tag {
-    return this.tagIdMap.get(id)!;
+  public getTagById(id: number): Tag {
+    return this.copyService.getTagCopy(this.tagIdMap.get(id)!);
   }
 
-  getTagByName(name: string): Tag {
-    return this.tagNameMap.get(name)!;
+  public getTagByName(name: string): Tag {
+    return this.copyService.getTagCopy(this.tagNameMap.get(name)!);
   }
 
-  getIdeaById(id: number): Idea {
-    return this.ideaIdMap.get(id)!;
+  public getIdeaById(id: number): Idea {
+    return this.copyService.getIdeaCopy(this.ideaIdMap.get(id)!);
   }
 
-  getIdeaByTopic(name: string): Idea {
-    return this.ideaTopicMap.get(name)!;
+  public getIdeaByTopic(name: string): Idea {
+    return this.copyService.getIdeaCopy(this.ideaTopicMap.get(name)!);
   }
 
-  getConceptById(id: number): Concept {
-    return this.conceptIdMap.get(id)!;
+  public getConceptById(id: number): Concept {
+    return this.copyService.getConceptCopy(this.conceptIdMap.get(id)!);
   }
 
-  getConceptQueryByContent(content: string): Concept[] {
+  public getConceptQueryByContent(content: string): Concept[] {
     let searchTerm = content.trim();
-    return this.conceptContentSort.filter((x) => x.content === searchTerm)!;
+    let result = this.conceptContentSort.filter(
+      (x) => x.content === searchTerm
+    )!;
+
+    return this.copyService.getConceptLisCopy(result);
   }
 
   private getNextTagId(): number {
@@ -212,27 +258,27 @@ export class InMemoryDatabaseService {
     return this._conceptLastId;
   }
 
-  deleteTagFromMapId(tag: Tag): void {
+  public deleteTagFromMapId(tag: Tag): void {
     this.tagIdMap.delete(tag.id);
   }
 
-  deleteTagFromMapName(tag: Tag): void {
+  public deleteTagFromMapName(tag: Tag): void {
     this.tagNameMap.delete(tag.name);
   }
 
-  deleteIdeaFromMapId(idea: Idea): void {
+  public deleteIdeaFromMapId(idea: Idea): void {
     this.ideaIdMap.delete(idea.id);
   }
 
-  deleteIdeaFromMapTopic(idea: Idea): void {
+  public deleteIdeaFromMapTopic(idea: Idea): void {
     this.ideaTopicMap.delete(idea.topic);
   }
 
-  deleteConceptFromMapId(concept: Concept): void {
+  public deleteConceptFromMapId(concept: Concept): void {
     this.conceptIdMap.delete(concept.id);
   }
 
-  deleteConceptFromMapContent(concept: Concept): void {
+  public deleteConceptFromMapContent(concept: Concept): void {
     let conceptDb = this.conceptContentSort.filter(
       (x) => x.id === concept.id
     )[0];
@@ -243,7 +289,7 @@ export class InMemoryDatabaseService {
     }
   }
 
-  clearDatabase(): void {
+  public clearDatabase(): void {
     this.tagIdMap = new Map<number, Tag>();
     this.tagNameMap = new Map<string, Tag>();
 
@@ -254,32 +300,32 @@ export class InMemoryDatabaseService {
     this.conceptContentSort = [];
 
     this.tagKeywords = [];
-    this.tagHistory = [];
-    this.conceptHistory = [];
-    this.ideaHistory = [];
+    this.tagHistories = new Map<number, []>();
+    this.conceptHistories = new Map<number, []>();
+    this.ideaHistories = new Map<number, []>();
 
     this._conceptLastId = 0;
     this._tagLastId = 0;
     this._ideaLastId = 0;
   }
 
-  constructor() {
+  constructor(private copyService: CopyService) {
     // todo:
     // 1. create an Idea with no concepts
     // 2. add it to the database
-    // expected result:
-    // the idea must have tags.
-    // the idea must create return with an id.
+    //    expected result:
+    //    the idea must have tags.
+    //    the idea must create return with an id.
     // 3. create a concept
     // 4. add it to the database
-    // expected result:
-    // the concept must have tags.
-    // the concept must create return with an id.
+    //    expected result:
+    //    the concept must have tags.
+    //    the concept must create return with an id.
     // 5. create a new Idea with concepts
     // 6. using a new topic, using no ids, the topic must not exist in the database
     // 7. save it to the database.
-    // expected result:
-    // the idea must look into the database for duplicated ideaIds get the ideaId if exits
+    //    expected result:
+    //    the idea must look into the database for duplicated ideaIds get the ideaId if exits
     // if
 
     return;

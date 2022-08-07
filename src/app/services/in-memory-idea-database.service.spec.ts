@@ -28,14 +28,14 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(db).toBeTruthy();
   });
 
-  it('T01.01 InMemoryIdeaDatabase service should increase every time an idea is saved', () => {
+  it('T01.01.01 InMemoryIdeaDatabase service should increase every time an idea is saved', () => {
     let idea = new Idea('topic01');
     ideaSut.saveIdea(idea);
 
     expect(db.ideaDbLength).toEqual(1);
   });
 
-  it('T01.01.1 When saving an Idea Given an existing id Should update an existing Idea', () => {
+  it('T01.01.01.1 When saving an Idea Given an existing id Should update an existing Idea', () => {
     let idea01 = new Idea('00000001');
     ideaSut.saveIdea(idea01);
 
@@ -65,7 +65,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea2.type = 6;
     ideaSut.saveIdea(idea2); // saving a new one with the same topic
 
-    expect(db.ideaExistById(ideaId)).toBeTrue();
+    expect(db.flagIdeaExistById(ideaId)).toBeTrue();
 
     let existingIdea = db.getIdeaById(ideaId);
 
@@ -77,7 +77,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(existingIdea.type).toEqual(6);
   });
 
-  it('T01.01.2 When saving an Idea Given a not existing id Should throw an error', () => {
+  it('T01.01.01.2 When saving an Idea Given a not existing id Should throw an error', () => {
     const topic = 'topic-1234656';
     let idea = new Idea(topic);
     idea.isUrgent = false;
@@ -93,10 +93,10 @@ describe('InMemoryIdeaDatabaseService', () => {
       ideaSut.saveIdea(idea);
     }).toThrow(new Error(`An Idea with id ${ideaId} does not exist.`));
 
-    expect(db.ideaExistById(ideaId)).toBeFalse();
+    expect(db.flagIdeaExistById(ideaId)).toBeFalse();
   });
 
-  it('T01.02.1 When saving an Idea Given no Id but an existing topic Should update an existing Idea', () => {
+  it('T01.01.02.1 When saving an Idea Given no Id but an existing topic Should update an existing Idea', () => {
     const topic = 'topic-1234656';
     let idea = new Idea(topic);
     idea.isUrgent = false;
@@ -115,7 +115,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea2.type = 6;
     ideaSut.saveIdea(idea2); // saving a new one with the same topic
 
-    expect(db.ideaExistByTopic(topic)).toBeTrue();
+    expect(db.flagIdeaExistByTopic(topic)).toBeTrue();
 
     let existingIdea = db.getIdeaByTopic(topic);
 
@@ -126,7 +126,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(existingIdea.type).toEqual(6);
   });
 
-  it('T01.02.2 When saving an Idea Given no Id and not existing topic Should create a new Idea', () => {
+  it('T01.01.02.2 When saving an Idea Given no Id and not existing topic Should create a new Idea', () => {
     const topic = 'content03';
 
     let idea = new Idea(topic);
@@ -171,7 +171,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt.parents[0].topic).toBe('lol');
   });
 
-  it('T01.03.1.1.1 When Saving an idea Given a parent being removed Should not remove the parent', () => {
+  it('T01.01.03.1.1.1 When Saving an idea Given a parent being removed Should not remove the parent', () => {
     let ideaParent01 = new Idea('parent01');
     ideaParent01 = ideaSut.saveIdea(ideaParent01);
 
@@ -182,7 +182,7 @@ describe('InMemoryIdeaDatabaseService', () => {
 
     let childIdea02 = ideaSut.getChildIdea(ideaParent02);
 
-    let ideaTopic = 'T01.03.1.1.1';
+    let ideaTopic = 'T01.01.03.1.1.1';
 
     let idea01 = new Idea(ideaTopic);
     idea01.parents = [childIdea01, childIdea02];
@@ -205,7 +205,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.parents.length).toEqual(2);
   });
 
-  it('T01.03.1.1.2 When Saving an idea Given a new parent Should add new parent', () => {
+  it('T01.01.03.1.1.2 When Saving an idea Given a new parent Should add new parent', () => {
     let ideaParent01 = new Idea('parent01');
     ideaParent01 = ideaSut.saveIdea(ideaParent01);
     let childIdea01 = ideaSut.getChildIdea(ideaParent01);
@@ -218,7 +218,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     ideaParent03 = ideaSut.saveIdea(ideaParent03);
     let childIdea03 = ideaSut.getChildIdea(ideaParent03);
 
-    let ideaTopic = 'T01.03.1.1.2';
+    let ideaTopic = 'T01.01.03.1.1.2';
 
     let idea01 = new Idea(ideaTopic);
     idea01.parents = [childIdea01, childIdea02];
@@ -239,7 +239,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.parents.length).toEqual(3);
   });
 
-  it('T01.03.1.1.3 When Removing Parents from Ideas Should remove the parent', () => {
+  it('T01.01.03.1.1.3 When Removing Parents from Ideas Should remove the parent', () => {
     let ideaParent01 = new Idea('parent01');
     ideaParent01 = ideaSut.saveIdea(ideaParent01);
 
@@ -250,7 +250,7 @@ describe('InMemoryIdeaDatabaseService', () => {
 
     let childIdea02 = ideaSut.getChildIdea(ideaParent02);
 
-    let ideaTopic = 'T01.03.1.1.3';
+    let ideaTopic = 'T01.01.03.1.1.3';
 
     let idea01 = new Idea(ideaTopic);
     idea01.parents = [childIdea01, childIdea02];
@@ -270,7 +270,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.parents.length).toEqual(1);
   });
 
-  it('T01.03.1.2.1 When Saving an idea Given a Concept being removed Should not remove the concept', () => {
+  it('T01.01.03.1.2.1 When Saving an idea Given a Concept being removed Should not remove the concept', () => {
     let concept01 = new Concept();
     concept01.content = 'content01';
     concept01 = conceptSut.saveConcept(concept01);
@@ -279,7 +279,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     concept02.content = 'content02';
     concept02 = conceptSut.saveConcept(concept02);
 
-    let ideaTopic = 'T01.03.1.2.1';
+    let ideaTopic = 'T01.01.03.1.2.1';
 
     let idea01 = new Idea(ideaTopic);
     idea01.concepts = [concept01, concept02];
@@ -300,7 +300,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.concepts.length).toEqual(2);
   });
 
-  it('T01.03.1.2.2 When Saving an idea Given a new Concept Should add new concept', () => {
+  it('T01.01.03.1.2.2 When Saving an idea Given a new Concept Should add new concept', () => {
     let concept01 = new Concept();
     concept01.content = 'content01';
     concept01 = conceptSut.saveConcept(concept01);
@@ -313,7 +313,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     concept03.content = 'content03';
     concept03 = conceptSut.saveConcept(concept03);
 
-    let ideaTopic = 'T01.03.1.2.2';
+    let ideaTopic = 'T01.01.03.1.2.2';
 
     let idea01 = new Idea(ideaTopic);
     idea01.concepts = [concept01, concept02];
@@ -334,7 +334,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.concepts.length).toEqual(3);
   });
 
-  it('T01.03.1.2.3 When Saving an idea Given a Concept being removed Should remove the concept', () => {
+  it('T01.01.03.1.2.3 When Saving an idea Given a Concept being removed Should remove the concept', () => {
     let concept01 = new Concept();
     concept01.content = 'content01';
     concept01 = conceptSut.saveConcept(concept01);
@@ -343,7 +343,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     concept02.content = 'content02';
     concept02 = conceptSut.saveConcept(concept02);
 
-    let ideaTopic = 'T01.03.1.2.3';
+    let ideaTopic = 'T01.01.03.1.2.3';
 
     let idea01 = new Idea(ideaTopic);
     idea01.concepts = [concept01, concept02];
@@ -361,7 +361,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.concepts.length).toEqual(1);
   });
 
-  it('T01.03.1.3.1 When Saving an idea Given a Tag being removed Should not remove the tag', () => {
+  it('T01.01.03.1.3.1 When Saving an idea Given a Tag being removed Should not remove the tag', () => {
     let tag01 = new Tag('tag01');
     tag01 = tagSut.saveTag(tag01);
     let childTag01 = tagSut.getChildTag(tag01);
@@ -370,7 +370,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     tag02 = tagSut.saveTag(tag02);
     let childTag02 = tagSut.getChildTag(tag02);
 
-    let ideaTopic = 'T01.03.1.3.1';
+    let ideaTopic = 'T01.01.03.1.3.1';
 
     let idea01 = new Idea(ideaTopic);
     idea01.tags = [childTag01, childTag02];
@@ -391,7 +391,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.tags.length).toEqual(2);
   });
 
-  it('T01.03.1.3.2 When Saving an idea Given a new Tag Should add new tag', () => {
+  it('T01.01.03.1.3.2 When Saving an idea Given a new Tag Should add new tag', () => {
     let tag01 = new Tag('tag01');
     tag01 = tagSut.saveTag(tag01);
     let childTag01 = tagSut.getChildTag(tag01);
@@ -404,7 +404,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     tag03 = tagSut.saveTag(tag03);
     let childTag03 = tagSut.getChildTag(tag03);
 
-    let ideaTopic = 'T01.03.1.3.2';
+    let ideaTopic = 'T01.01.03.1.3.2';
 
     let idea01 = new Idea(ideaTopic);
     idea01.tags = [childTag01, childTag02];
@@ -425,7 +425,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.tags.length).toEqual(3);
   });
 
-  it('T01.03.1.3.3 When Saving an idea Given a Tag being removed Should remove the tag', () => {
+  it('T01.01.03.1.3.3 When Saving an idea Given a Tag being removed Should remove the tag', () => {
     let tag01 = new Tag('tag01');
     tag01 = tagSut.saveTag(tag01);
     let childTag01 = tagSut.getChildTag(tag01);
@@ -434,7 +434,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     tag02 = tagSut.saveTag(tag02);
     let childTag02 = tagSut.getChildTag(tag02);
 
-    let ideaTopic = 'T01.03.1.3.3';
+    let ideaTopic = 'T01.01.03.1.3.3';
 
     let idea01 = new Idea(ideaTopic);
     idea01.tags = [childTag01, childTag02];
@@ -452,7 +452,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(ideaUt02.tags.length).toEqual(1);
   });
 
-  it('T01.04.1 When Saving an Idea Given Parents Should create the Parents first, otherwise throw an exception', () => {
+  it('T01.01.04.1 When Saving an Idea Given Parents Should create the Parents first, otherwise throw an exception', () => {
     let idea = new Idea('topic-1234656');
     idea.id = 0;
 
@@ -472,7 +472,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     }).toThrow(new Error(`All parents must have id.`));
   });
 
-  it('T01.04.2 When Saving an Idea Given Child Concepts Should create the Concept first, otherwise throw an exception', () => {
+  it('T01.01.04.2 When Saving an Idea Given Child Concepts Should create the Concept first, otherwise throw an exception', () => {
     let idea = new Idea('topic-1234656');
     idea.id = 0;
 
@@ -493,7 +493,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     }).toThrow(new Error(`All child concepts must have id.`));
   });
 
-  it('T01.04.3 When Saving an Idea Given Child Tags Should create the Tags first, otherwise throw an exception', () => {
+  it('T01.01.04.3 When Saving an Idea Given Child Tags Should create the Tags first, otherwise throw an exception', () => {
     let idea = new Idea('topic-1234656');
     idea.id = 0;
 
@@ -554,7 +554,7 @@ describe('InMemoryIdeaDatabaseService', () => {
     idea2.type = 6;
     ideaSut.saveIdea(idea2); // saving a new one with the topic
 
-    expect(db.ideaExistById(ideaId)).toBeTrue();
+    expect(db.flagIdeaExistById(ideaId)).toBeTrue();
 
     let existingIdea = db.getIdeaById(ideaId);
 
@@ -569,12 +569,12 @@ describe('InMemoryIdeaDatabaseService', () => {
     ideaSut.saveIdea(idea);
 
     expect(db.ideaDbLength).toEqual(1);
-    expect(db.ideaExistById(idea.id)).toBeTrue();
-    expect(db.ideaExistByTopic(idea.topic)).toBeTrue();
+    expect(db.flagIdeaExistById(idea.id)).toBeTrue();
+    expect(db.flagIdeaExistByTopic(idea.topic)).toBeTrue();
 
     ideaSut.removeIdea(idea);
 
-    expect(db.ideaExistById(idea.id)).toBeFalse();
-    expect(db.ideaExistByTopic(idea.topic)).toBeFalse();
+    expect(db.flagIdeaExistById(idea.id)).toBeFalse();
+    expect(db.flagIdeaExistByTopic(idea.topic)).toBeFalse();
   });
 });

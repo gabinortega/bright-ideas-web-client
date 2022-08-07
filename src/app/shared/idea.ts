@@ -27,8 +27,7 @@ export class Idea {
 }
 
 export class ChildIdea {
-  id: number = 0;
-  topic: string = '';
+  constructor(public id: number = 0, public topic = '') {}
 }
 
 export enum IdeaType {

@@ -1,3 +1,4 @@
+import { HistoricService } from './historic.service';
 import { Injectable } from '@angular/core';
 import { ChildTag, Tag } from '../shared/tag';
 import { InMemoryDatabaseService } from './in-memory-database.service';
@@ -10,9 +11,9 @@ export class InMemoryTagDatabaseService {
     let currentDate = new Date().getTime();
     tag.created = currentDate;
     tag.lasUpdated = currentDate;
-    let tagDb = this.db.setTagToIdMap(tag);
-    this.db.setTagToNameMap(tagDb);
-    return tagDb;
+    let result = this.db.setTagToIdMap(tag);
+    this.db.setTagToNameMap(result);
+    return result;
   }
 
   updateTag(tag: Tag): Tag {
@@ -45,26 +46,27 @@ export class InMemoryTagDatabaseService {
       }
     });
 
+    this.history.saveTag(existingTag.id);
     existingTag.lasUpdated = new Date().getTime();
-    this.db.setTagToIdMap(existingTag);
+    let result = this.db.setTagToIdMap(existingTag);
     this.db.setTagToNameMap(existingTag);
-    return existingTag;
+    return result;
   }
 
   saveTag(tag: Tag): Tag {
     tag.concepts.forEach((concept) => {
-      if (!this.db.conceptExistById(concept.id)) {
+      if (!this.db.flagConceptExistById(concept.id)) {
         throw new Error(`All concepts must have id.`);
       }
     });
 
     tag.ideas.forEach((idea) => {
-      if (!this.db.ideaExistById(idea.id)) {
+      if (!this.db.flagIdeaExistById(idea.id)) {
         throw new Error(`All ideas must have id.`);
       }
     });
 
-    if (this._tagExist(tag)) {
+    if (this.tagExist(tag)) {
       return this.updateTag(tag);
     }
 
@@ -79,82 +81,104 @@ export class InMemoryTagDatabaseService {
   }
 
   changeTagName(tag: Tag, newTagName: string): Tag {
-    if (this.db.tagExistById(tag.id)) {
-      let tagDb = this.db.getTagById(tag.id);
-      tagDb.setName(newTagName);
-      return tagDb;
+    if (this.db.flagTagExistById(tag.id)) {
+      let existingTag = this.db.getTagById(tag.id);
+      existingTag.setName(newTagName);
+
+      this.history.saveTag(existingTag.id);
+      existingTag.lasUpdated = new Date().getTime();
+      let result = this.db.setTagToIdMap(existingTag);
+      this.db.setTagToNameMap(existingTag);
+      return result;
     }
     throw new Error(`A Tag with id ${tag.id} does not exist.`);
   }
 
   removeIdeaRelationship(tag: Tag, parentId: number): Tag {
-    if (!this._tagExist(tag)) {
+    if (!this.tagExist(tag)) {
       return tag;
     }
 
-    let tagDb = this.db.getTagById(tag.id);
+    let existingTag = this.db.getTagById(tag.id);
 
-    let resultList = tagDb.ideas.filter((x) => x.id === parentId);
+    let resultList = existingTag.ideas.filter((x) => x.id === parentId);
 
     if (resultList.length < 1) {
       console.log(
         `Nothing to remove. No Idea relationship with id ${parentId}`
       );
-      return tagDb;
+      return existingTag;
     }
 
-    tagDb.ideas = tagDb.ideas.filter((x) => x.id !== parentId);
-    return tagDb;
+    existingTag.ideas = existingTag.ideas.filter((x) => x.id !== parentId);
+
+    this.history.saveTag(existingTag.id);
+    existingTag.lasUpdated = new Date().getTime();
+    let result = this.db.setTagToIdMap(existingTag);
+    this.db.setTagToNameMap(existingTag);
+    return result;
   }
 
   removeConceptRelationship(tag: Tag, conceptId: number): Tag {
-    if (!this._tagExist(tag)) {
+    if (!this.tagExist(tag)) {
       return tag;
     }
 
-    let tagDb = this.db.getTagById(tag.id);
+    let existingTag = this.db.getTagById(tag.id);
 
-    let resultList = tagDb.concepts.filter((x) => x.id === conceptId);
+    let resultList = existingTag.concepts.filter((x) => x.id === conceptId);
 
     if (resultList.length < 1) {
       console.log(
         `Nothing to remove. No Concept relationship with id ${conceptId}`
       );
-      return tagDb;
+      return existingTag;
     }
 
-    tagDb.concepts = tagDb.concepts.filter((x) => x.id !== conceptId);
-    return tagDb;
+    existingTag.concepts = existingTag.concepts.filter(
+      (x) => x.id !== conceptId
+    );
+
+    this.history.saveTag(existingTag.id);
+    existingTag.lasUpdated = new Date().getTime();
+    let result = this.db.setTagToIdMap(existingTag);
+    this.db.setTagToNameMap(existingTag);
+    return result;
   }
 
   removeKeywordRelationship(tag: Tag, keyword: string): Tag {
-    if (!this._tagExist(tag)) {
+    if (!this.tagExist(tag)) {
       return tag;
     }
 
-    let tagDb = this.db.getTagById(tag.id);
+    let existingTag = this.db.getTagById(tag.id);
 
-    let resultList = tagDb.keywords.filter((x) => x === keyword);
+    let resultList = existingTag.keywords.filter((x) => x === keyword);
 
     if (resultList.length < 1) {
       console.log(`Nothing to remove. No keyword relationship '${keyword}'`);
-      return tagDb;
+      return existingTag;
     }
 
-    tagDb.keywords = tagDb.keywords.filter((x) => x !== keyword);
-    return tagDb;
+    existingTag.keywords = existingTag.keywords.filter((x) => x !== keyword);
+
+    this.history.saveTag(existingTag.id);
+    existingTag.lasUpdated = new Date().getTime();
+    let result = this.db.setTagToIdMap(existingTag);
+    this.db.setTagToNameMap(existingTag);
+    return result;
   }
 
-  _tagExist(tag: Tag): boolean {
+  private tagExist(tag: Tag): boolean {
     if (tag.id > 0) {
-      if (this.db.tagExistById(tag.id)) {
+      if (this.db.flagTagExistById(tag.id)) {
         return true;
       }
 
       throw new Error(`A Tag with id ${tag.id} does not exist.`);
     }
 
-    return this.db.tagExistByName(tag.name);
+    return this.db.flagTagExistByName(tag.name);
   }
 
   removeTag(tag: Tag): void {
@@ -162,5 +186,8 @@ export class InMemoryTagDatabaseService {
     this.db.deleteTagFromMapName(tag);
   }
 
-  constructor(private db: InMemoryDatabaseService) {}
+  constructor(
+    private db: InMemoryDatabaseService,
+    private history: HistoricService
+  ) {}
 }

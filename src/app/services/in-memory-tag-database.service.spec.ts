@@ -32,7 +32,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(db).toBeTruthy();
   });
 
-  it('T03.01 Should increase every time a Tag is saved', () => {
+  it('T01.03.01 Should increase every time a Tag is saved', () => {
     let tag01 = new Tag('tag01');
     tagSut.saveTag(tag01);
 
@@ -44,15 +44,15 @@ describe('InMemoryTagDatabaseService', () => {
     expect(db.tagDbLength).toEqual(2);
   });
 
-  it('T03.01 Should save the Tag in the database after save it', () => {
+  it('T01.03.01 Should save the Tag in the database after save it', () => {
     let tag01Name = 'tag01';
     let tag01 = new Tag(tag01Name);
     tagSut.saveTag(tag01);
 
-    expect(db.tagExistByName(tag01Name)).toBeTrue();
+    expect(db.flagTagExistByName(tag01Name)).toBeTrue();
   });
 
-  it('T03.01.1 When saving a Tag Given an existing id Should update an existing Tag', () => {
+  it('T01.03.01.1 When saving a Tag Given an existing id Should update an existing Tag', () => {
     let tag01 = new Tag('00000001');
     tagSut.saveTag(tag01);
 
@@ -77,7 +77,7 @@ describe('InMemoryTagDatabaseService', () => {
     tag03.priorityOrder = 6;
     tagSut.saveTag(tag03); // saving a new one with the same name
 
-    expect(db.tagExistById(tagId)).toBeTrue();
+    expect(db.flagTagExistById(tagId)).toBeTrue();
 
     let existingTag: any = db.getTagById(tagId);
 
@@ -87,7 +87,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(existingTag.priorityOrder).toEqual(6);
   });
 
-  it('T03.01.2 When saving a Tag Given a not existing id Should throw an error', () => {
+  it('T01.03.01.2 When saving a Tag Given a not existing id Should throw an error', () => {
     const name = 'name-1234656';
     let tag = new Tag(name);
     tag.isUrgent = false;
@@ -101,10 +101,10 @@ describe('InMemoryTagDatabaseService', () => {
       tagSut.saveTag(tag);
     }).toThrow(new Error(`A Tag with id ${ideaId} does not exist.`));
 
-    expect(db.ideaExistById(ideaId)).toBeFalse();
+    expect(db.flagIdeaExistById(ideaId)).toBeFalse();
   });
 
-  it('T03.02.1.1 When saving a Tag Given no Id but and existing name Should update an existing Tag', () => {
+  it('T01.03.02.1.1 When saving a Tag Given no Id but and existing name Should update an existing Tag', () => {
     const name = 'name-1234656';
     let tag1 = new Tag(name);
     tag1.isUrgent = false;
@@ -121,7 +121,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(name)).toBeTrue();
+    expect(db.flagTagExistByName(name)).toBeTrue();
 
     let existingTag: any = db.getTagByName(name);
 
@@ -130,7 +130,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(existingTag.priorityOrder).toEqual(6);
   });
 
-  it('T03.02.1.2 When saving a Tag Given no Id but and existing name Should update an existing Tag (trim)', () => {
+  it('T01.03.02.1.2 When saving a Tag Given no Id but and existing name Should update an existing Tag (trim)', () => {
     const name = 'name-1234656';
     let tag1 = new Tag(name);
     tag1.isUrgent = false;
@@ -155,7 +155,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(name)).toBeTrue();
+    expect(db.flagTagExistByName(name)).toBeTrue();
 
     let existingTag: any = db.getTagByName(name);
 
@@ -164,15 +164,15 @@ describe('InMemoryTagDatabaseService', () => {
     expect(existingTag.priorityOrder).toEqual(6);
   });
 
-  it('T03.02.2 When saving a Tag Given no Id and not existing topic Should create a new Tag', () => {
+  it('T01.03.02.2 When saving a Tag Given no Id and not existing topic Should create a new Tag', () => {
     let tag01Name = 'tag01';
     let tag01 = new Tag(tag01Name);
     tagSut.saveTag(tag01);
 
-    expect(db.tagExistByName(tag01Name)).toBeTrue();
+    expect(db.flagTagExistByName(tag01Name)).toBeTrue();
   });
 
-  it('T03.03.3.1.1 When Saving a Tag Given an Idea being removed should not remove the idea', () => {
+  it('T01.03.03.3.1.1 When Saving a Tag Given an Idea being removed should not remove the idea', () => {
     let ideaParent01 = new Idea('parent01');
     ideaParent01 = ideaSut.saveIdea(ideaParent01);
     let childIdea01 = ideaSut.getChildIdea(ideaParent01);
@@ -195,8 +195,8 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
-    expect(db.tagExistById(tag01Id)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistById(tag01Id)).toBeTrue();
 
     let tagResult01: any = db.getTagByName(tagName);
     let tagResult02: any = db.getTagById(tag01Id);
@@ -205,7 +205,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(tagResult02.ideas.length).toEqual(2);
   });
 
-  it('T03.03.3.1.2 When Saving a Tag Given an new Idea Should add new idea', () => {
+  it('T01.03.03.3.1.2 When Saving a Tag Given an new Idea Should add new idea', () => {
     let ideaParent01 = new Idea('parent01');
     ideaParent01 = ideaSut.saveIdea(ideaParent01);
     let childIdea01 = ideaSut.getChildIdea(ideaParent01);
@@ -232,7 +232,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01: any = db.getTagByName(tagName);
     let ideaUt02: any = db.getTagById(tag01Id);
@@ -241,7 +241,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.ideas.length).toEqual(3);
   });
 
-  it('T03.03.3.1.3 When Removing Ideas from Tag Should Remove the Idea', () => {
+  it('T01.03.03.3.1.3 When Removing Ideas from Tag Should Remove the Idea', () => {
     let ideaParent01 = new Idea('idea01');
     ideaParent01 = ideaSut.saveIdea(ideaParent01);
     let childIdea01 = ideaSut.getChildIdea(ideaParent01);
@@ -261,8 +261,8 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
-    expect(db.tagExistById(tag01Id)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistById(tag01Id)).toBeTrue();
 
     let tagResult01: any = db.getTagByName(tagName);
     let tagResult02: any = db.getTagById(tag01Id);
@@ -271,7 +271,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(tagResult02.ideas.length).toEqual(1);
   });
 
-  it('T03.03.3.2.1 When Saving a Tag Given a Concept being removed should not remove the concept', () => {
+  it('T01.03.03.3.2.1 When Saving a Tag Given a Concept being removed should not remove the concept', () => {
     let concept01 = new Concept();
     concept01.content = 'content01';
     concept01 = conceptSut.saveConcept(concept01);
@@ -294,7 +294,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01 = db.getTagByName(tagName);
     let ideaUt02 = db.getTagById(tag01Id);
@@ -303,7 +303,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.concepts.length).toEqual(2);
   });
 
-  it('T03.03.3.2.2 When Saving a Tag Given a new Concept Should add new concept', () => {
+  it('T01.03.03.3.2.2 When Saving a Tag Given a new Concept Should add new concept', () => {
     let concept01 = new Concept();
     concept01.content = 'content01';
     concept01 = conceptSut.saveConcept(concept01);
@@ -330,7 +330,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01 = db.getTagByName(tagName);
     let ideaUt02 = db.getTagById(tag01Id);
@@ -339,7 +339,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.concepts.length).toEqual(3);
   });
 
-  it('T03.03.3.2.3 When Saving a Tag Given a Concept being removed should remove the concept', () => {
+  it('T01.03.03.3.2.3 When Saving a Tag Given a Concept being removed should remove the concept', () => {
     let concept01 = new Concept();
     concept01.content = 'content01';
     concept01 = conceptSut.saveConcept(concept01);
@@ -359,7 +359,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01 = db.getTagByName(tagName);
     let ideaUt02 = db.getTagById(tag01Id);
@@ -368,7 +368,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.concepts.length).toEqual(1);
   });
 
-  it('T03.03.3.4.1 When Saving a Tag Given a keyword being removed should not remove the keyword', () => {
+  it('T01.03.03.3.4.1 When Saving a Tag Given a keyword being removed should not remove the keyword', () => {
     let keyword01 = 'keyword01';
     let keyword02 = 'keyword02';
 
@@ -386,7 +386,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01 = db.getTagByName(tagName);
     let ideaUt02 = db.getTagById(tag01Id);
@@ -395,7 +395,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.keywords.length).toEqual(2);
   });
 
-  it('T03.03.3.4.2 When Saving a Tag Given an new keyword Should add new keyword', () => {
+  it('T01.03.03.3.4.2 When Saving a Tag Given an new keyword Should add new keyword', () => {
     let keyword01 = 'keyword01';
     let keyword02 = 'keyword02';
     let keyword03 = 'keyword03';
@@ -414,7 +414,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01 = db.getTagByName(tagName);
     let ideaUt02 = db.getTagById(tag01Id);
@@ -423,7 +423,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.keywords.length).toEqual(3);
   });
 
-  it('T03.03.3.4.3 When Saving a Tag Given a keyword being removed should remove the keyword', () => {
+  it('T01.03.03.3.4.3 When Saving a Tag Given a keyword being removed should remove the keyword', () => {
     let keyword01 = 'keyword01';
     let keyword02 = 'keyword02';
 
@@ -438,7 +438,7 @@ describe('InMemoryTagDatabaseService', () => {
 
     expect(db.tagDbLength).toEqual(1);
 
-    expect(db.tagExistByName(tagName)).toBeTrue();
+    expect(db.flagTagExistByName(tagName)).toBeTrue();
 
     let ideaUt01 = db.getTagByName(tagName);
     let ideaUt02 = db.getTagById(tag01Id);
@@ -447,7 +447,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt02.keywords.length).toEqual(1);
   });
 
-  it('T03.04.1 When Saving a Tag Given Child Concepts Should create the Concepts first, otherwise throw an exception', () => {
+  it('T01.03.04.1 When Saving a Tag Given Child Concepts Should create the Concepts first, otherwise throw an exception', () => {
     let tag = new Tag('T01.13');
     tag.id = 0;
 
@@ -467,7 +467,7 @@ describe('InMemoryTagDatabaseService', () => {
     }).toThrow(new Error(`All concepts must have id.`));
   });
 
-  it('T03.04.2 When Saving a Tag Given Child Ideas Should create the first, otherwise throw an exception', () => {
+  it('T01.03.04.2 When Saving a Tag Given Child Ideas Should create the first, otherwise throw an exception', () => {
     let tag = new Tag('T01.19');
     tag.id = 0;
 
@@ -487,7 +487,7 @@ describe('InMemoryTagDatabaseService', () => {
     }).toThrow(new Error(`All ideas must have id.`));
   });
 
-  it('T03.06.2 When Saving a Tag Given a New Tag Name Should not update the Tag Name', () => {
+  it('T01.03.06.2 When Saving a Tag Given a New Tag Name Should not update the Tag Name', () => {
     let tagName = 'tagName01';
     let tagNameUpdated = 'tagName01-Updated';
 
@@ -504,7 +504,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt.name).toEqual(tagName);
   });
 
-  it('T03.06.1 When Changing the Tag Name Given New Name Should update Tag name', () => {
+  it('T01.03.06.1 When Changing the Tag Name Given New Name Should update Tag name', () => {
     let tagName = 'tagName01';
     let newTagName = 'tagName01-Updated';
 
@@ -521,7 +521,7 @@ describe('InMemoryTagDatabaseService', () => {
     expect(ideaUt.name).toEqual(newTagName);
   });
 
-  it('T03.06.1 When Changing the Tag Name Given New Name Should not update Tag name', () => {
+  it('T01.03.06.1 When Changing the Tag Name Given New Name Should not update Tag name', () => {
     const tagName = 'tag-1234656';
     const tagNameUpdated = 'tag-1234656+update it';
     let tag = new Tag(tagName);
@@ -536,7 +536,7 @@ describe('InMemoryTagDatabaseService', () => {
     tag2.isUrgent = true;
     tagSut.saveTag(tag2); // saving a new one with the same id and different tagName
 
-    expect(db.tagExistById(ideaId)).toBeTrue();
+    expect(db.flagTagExistById(ideaId)).toBeTrue();
 
     let existingTag = db.getTagById(ideaId);
 
@@ -544,17 +544,54 @@ describe('InMemoryTagDatabaseService', () => {
     expect(existingTag.isUrgent).toBeTrue();
   });
 
+  it('T04.03.01 When Changing the Tag Name Should update all relationships', () => {
+    const tagName = 'tag-000000';
+    const newTagName = 'tag-1234656';
+    let tag = new Tag(tagName);
+    tag.isUrgent = false;
+
+    // saving a new tag with name 'tag-000000
+    tag = tagSut.saveTag(tag);
+    let ideaId = tag.id;
+
+    let idea01 = new Idea('topic01');
+    idea01.tags.push(tag);
+    ideaSut.saveIdea(idea01);
+    let idea01Id = idea01.id;
+
+    let idea02 = new Idea('topic02');
+    idea02.tags.push(tag);
+    ideaSut.saveIdea(idea02);
+    let idea02Id = idea01.id;
+
+    let newIdea01a = db.getIdeaById(idea01Id);
+    let newIdea02a = db.getIdeaById(idea02Id);
+
+    expect(newIdea01a.tags[0].name).toBe(tagName);
+    expect(newIdea02a.tags[0].name).toBe(tagName);
+
+    tagSut.changeTagName(tag, newTagName);
+
+    let newIdea01b = db.getIdeaById(idea01Id);
+    let newIdea02b = db.getIdeaById(idea02Id);
+
+    expect(newIdea01b.tags[0].name).toBe(newTagName);
+    expect(newIdea02b.tags[0].name).toBe(newTagName);
+    expect(newIdea01a.tags[0].name).toBe(tagName);
+    expect(newIdea02a.tags[0].name).toBe(tagName);
+  });
+
   it('Should remove a Tag from the database', () => {
     let tag = new Tag('tagName');
     tagSut.saveTag(tag);
 
     expect(db.tagDbLength).toEqual(1);
-    expect(db.tagExistById(tag.id)).toBeTrue();
-    expect(db.tagExistByName(tag.name)).toBeTrue();
+    expect(db.flagTagExistById(tag.id)).toBeTrue();
+    expect(db.flagTagExistByName(tag.name)).toBeTrue();
 
     tagSut.removeTag(tag);
 
-    expect(db.tagExistById(tag.id)).toBeFalse();
-    expect(db.tagExistByName(tag.name)).toBeFalse();
+    expect(db.flagTagExistById(tag.id)).toBeFalse();
+    expect(db.flagTagExistByName(tag.name)).toBeFalse();
   });
 });

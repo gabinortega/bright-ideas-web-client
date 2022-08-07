@@ -4,12 +4,13 @@ import { Concept, ConceptType } from '../shared/concept';
 import { ChildTag } from '../shared/tag';
 import { ChildIdea } from '../shared/idea';
 import { InMemoryDatabaseService } from './in-memory-database.service';
+import { HistoricService } from './historic.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class InMemoryConceptDatabaseService {
-  insertConcept(concept: Concept): Concept {
+  private insertConcept(concept: Concept): Concept {
     concept.id = 0;
     concept.content = concept.content.trim();
     let currentDate = new Date().getTime();
@@ -20,7 +21,7 @@ export class InMemoryConceptDatabaseService {
     return conceptDb;
   }
 
-  updateConcept(concept: Concept): Concept {
+  private updateConcept(concept: Concept): Concept {
     concept.content = concept.content.trim();
 
     let existingConcept =
@@ -33,6 +34,7 @@ export class InMemoryConceptDatabaseService {
     existingConcept.isUrgent = concept.isUrgent;
     existingConcept.priorityOrder = concept.priorityOrder;
     existingConcept.status = concept.status;
+    existingConcept.type = concept.type;
 
     concept.tags.forEach((tag) => {
       if (existingConcept.tags.filter((x) => x.id === tag.id).length === 0) {
@@ -48,23 +50,22 @@ export class InMemoryConceptDatabaseService {
       }
     });
 
-    existingConcept.type = concept.type;
-    let currentDate = new Date().getTime();
-    existingConcept.lasUpdated = currentDate;
-    this.db.setConceptToIdMap(existingConcept);
+    this.history.saveConcept(existingConcept.id);
+    existingConcept.lasUpdated = new Date().getTime();
+    let result = this.db.setConceptToIdMap(existingConcept);
     this.db.updateConceptToSortByContentList(existingConcept);
-    return existingConcept;
+    return result;
   }
 
   saveConcept(concept: Concept, forceNew: boolean = false): Concept {
     concept.tags.forEach((tag) => {
-      if (!this.db.tagExistById(tag.id)) {
+      if (!this.db.flagTagExistById(tag.id)) {
         throw new Error(`All Tags must have id.`);
       }
     });
 
     concept.parents.forEach((idea) => {
-      if (!this.db.ideaExistById(idea.id)) {
+      if (!this.db.flagIdeaExistById(idea.id)) {
         throw new Error(`All parent Ideas must have id.`);
       }
     });
@@ -108,17 +109,24 @@ export class InMemoryConceptDatabaseService {
       return concept;
     }
 
-    let conceptDb = this.db.getConceptById(concept.id);
+    let existingConcept = this.db.getConceptById(concept.id);
+    let parentList = existingConcept.parents.filter((x) => x.id === parentId);
 
-    let resultList = conceptDb.parents.filter((x) => x.id === parentId);
-
-    if (resultList.length < 1) {
+    if (parentList.length < 1) {
       console.log(`Nothing to remove. No parent with id ${parentId}`);
-      return conceptDb;
+      return existingConcept;
     }
 
-    conceptDb.parents = conceptDb.parents.filter((x) => x.id !== parentId);
-    return conceptDb;
+    existingConcept.parents = existingConcept.parents.filter(
+      (x) => x.id !== parentId
+    );
+
+    this.history.saveConcept(existingConcept.id);
+    existingConcept.lasUpdated = new Date().getTime();
+    let result = this.db.setConceptToIdMap(existingConcept);
+    this.db.updateConceptToSortByContentList(existingConcept);
+
+    return result;
   }
 
   removeTagRelationship(concept: Concept, tagId: number): Concept {
@@ -126,33 +134,35 @@ export class InMemoryConceptDatabaseService {
       return concept;
     }
 
-    let conceptDb = this.db.getConceptById(concept.id);
+    let existingConcept = this.db.getConceptById(concept.id);
 
-    let resultList = conceptDb.tags.filter((x) => x.id === tagId);
+    let resultList = existingConcept.tags.filter((x) => x.id === tagId);
 
     if (resultList.length < 1) {
       console.log(`Nothing to remove. No Tag relationship with id ${tagId}`);
-      return conceptDb;
+      return existingConcept;
     }
 
-    conceptDb.tags = conceptDb.tags.filter((x) => x.id !== tagId);
-    return conceptDb;
+    existingConcept.tags = existingConcept.tags.filter((x) => x.id !== tagId);
+
+    this.history.saveConcept(existingConcept.id);
+    existingConcept.lasUpdated = new Date().getTime();
+    let result = this.db.setConceptToIdMap(existingConcept);
+    this.db.updateConceptToSortByContentList(existingConcept);
+
+    return result;
   }
 
   _conceptExist(concept: Concept): boolean {
     if (concept.id > 0) {
-      if (this.db.conceptExistById(concept.id)) {
+      if (this.db.flagConceptExistById(concept.id)) {
         return true;
       }
 
       throw new Error(`A Concept with id ${concept.id} does not exist.`);
     }
 
-    if (this.db.conceptExistByContent(concept.content)) {
-      return true;
-    }
-
-    return false;
+    return this.db.flagConceptExistByContent(concept.content);
   }
 
   removeConcept(concept: Concept): void {
@@ -164,5 +174,8 @@ export class InMemoryConceptDatabaseService {
     this.db.deleteConceptFromMapContent(concept);
   }
 
-  constructor(private db: InMemoryDatabaseService) {}
+  constructor(
+    private db: InMemoryDatabaseService,
+    private history: HistoricService
+  ) {}
 }
