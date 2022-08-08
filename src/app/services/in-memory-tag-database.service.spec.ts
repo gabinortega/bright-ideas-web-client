@@ -544,7 +544,21 @@ describe('InMemoryTagDatabaseService', () => {
     expect(existingTag.isUrgent).toBeTrue();
   });
 
-  it('T04.03.01 When Changing the Tag Name Should update all relationships', () => {
+  it('Should remove a Tag from the database', () => {
+    let tag = new Tag('tagName');
+    tagSut.saveTag(tag);
+
+    expect(db.tagDbLength).toEqual(1);
+    expect(db.flagTagExistById(tag.id)).toBeTrue();
+    expect(db.flagTagExistByName(tag.name)).toBeTrue();
+
+    tagSut.removeTag(tag);
+
+    expect(db.flagTagExistById(tag.id)).toBeFalse();
+    expect(db.flagTagExistByName(tag.name)).toBeFalse();
+  });
+
+  it('T04.03.01 When Changing the Tag Name Should update all Idea relationships', () => {
     const tagName = 'compras';
     const newTagName = 'compras en la farmacia';
     let tag = new Tag(tagName);
@@ -561,6 +575,38 @@ describe('InMemoryTagDatabaseService', () => {
     idea02.tags.push(tag);
     ideaSut.saveIdea(idea02);
 
+    let newIdea01a = db.getIdeaById(idea01.id);
+    let newIdea02a = db.getIdeaById(idea02.id);
+
+    expect(newIdea01a.tags[0].name)
+      .withContext('El tag asociado debe existir en la Idea #1')
+      .toBe(tagName);
+    expect(newIdea02a.tags[0].name)
+      .withContext('El tag asociado debe existir en la Idea #2')
+      .toBe(tagName);
+
+    tagSut.changeTagName(tag, newTagName);
+
+    let newIdea01b = db.getIdeaById(idea01.id);
+    let newIdea02b = db.getIdeaById(idea02.id);
+
+    expect(newIdea01b.tags[0].name)
+      .withContext('El tag actualizado debe existir en el Idea #1')
+      .toBe(newTagName);
+    expect(newIdea02b.tags[0].name)
+      .withContext('El tag actualizado debe existir en el Idea #2')
+      .toBe(newTagName);
+  });
+
+  it('T04.03.02 When Changing the Tag Name Should update all Concept relationships', () => {
+    const tagName = 'compras';
+    const newTagName = 'compras en la farmacia';
+    let tag = new Tag(tagName);
+    tag.isUrgent = false;
+
+    // saving a new tag with name 'tag-000000
+    tag = tagSut.saveTag(tag);
+
     let concept01 = new Concept('Comprar Tylenol');
     concept01.tags.push(tag);
     conceptSut.saveConcept(concept01);
@@ -569,17 +615,9 @@ describe('InMemoryTagDatabaseService', () => {
     concept02.tags.push(tag);
     conceptSut.saveConcept(concept02);
 
-    let newIdea01a = db.getIdeaById(idea01.id);
-    let newIdea02a = db.getIdeaById(idea02.id);
     let newConcept01a = db.getConceptById(concept01.id);
     let newConcept02a = db.getConceptById(concept02.id);
 
-    expect(newIdea01a.tags[0].name)
-      .withContext('El tag asociado debe existir en la Idea #1')
-      .toBe(tagName);
-    expect(newIdea02a.tags[0].name)
-      .withContext('El tag asociado debe existir en la Idea #2')
-      .toBe(tagName);
     expect(newConcept01a.tags[0].name)
       .withContext('El tag asociado debe existir en el Concepto #1')
       .toBe(tagName);
@@ -589,36 +627,14 @@ describe('InMemoryTagDatabaseService', () => {
 
     tagSut.changeTagName(tag, newTagName);
 
-    let newIdea01b = db.getIdeaById(idea01.id);
-    let newIdea02b = db.getIdeaById(idea02.id);
     let newConcept01b = db.getConceptById(concept01.id);
     let newConcept02b = db.getConceptById(concept02.id);
 
-    expect(newIdea01b.tags[0].name)
-      .withContext('El tag actualizado debe existir en el Idea #1')
-      .toBe(newTagName);
-    expect(newIdea02b.tags[0].name)
-      .withContext('El tag actualizado debe existir en el Idea #2')
-      .toBe(newTagName);
     expect(newConcept01b.tags[0].name)
       .withContext('El tag actualizado debe existir en el Concepto #1')
       .toBe(newTagName);
     expect(newConcept02b.tags[0].name)
       .withContext('El tag actualizado debe existir en el Concepto #2.')
       .toBe(newTagName);
-  });
-
-  it('Should remove a Tag from the database', () => {
-    let tag = new Tag('tagName');
-    tagSut.saveTag(tag);
-
-    expect(db.tagDbLength).toEqual(1);
-    expect(db.flagTagExistById(tag.id)).toBeTrue();
-    expect(db.flagTagExistByName(tag.name)).toBeTrue();
-
-    tagSut.removeTag(tag);
-
-    expect(db.flagTagExistById(tag.id)).toBeFalse();
-    expect(db.flagTagExistByName(tag.name)).toBeFalse();
   });
 });

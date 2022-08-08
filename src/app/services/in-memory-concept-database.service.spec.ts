@@ -285,23 +285,27 @@ describe('InMemoryConceptDatabaseService', () => {
     conceptSut.saveConcept(concept02);
 
     expect(db.conceptDbLength)
-      .withContext("Only one concept has been created, the same concept was updated. Querying Mapping by Id")
+      .withContext(
+        'Only one concept has been created, the same concept was updated. Querying Mapping by Id'
+      )
       .toBe(1);
 
     let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
     expect(conceptQueryResult.length)
-      .withContext("Only one concept has been created, the same concept was updated. Querying Mapping by Content")
-      .toBe (1);
+      .withContext(
+        'Only one concept has been created, the same concept was updated. Querying Mapping by Content'
+      )
+      .toBe(1);
 
     let ideaUt01 = conceptQueryResult[0];
     let ideaUt02 = db.getConceptById(concept01Id);
 
     expect(ideaUt01.parents.length)
-      .withContext("One parent left, one parent remove on Mapping by Content")
+      .withContext('One parent left, one parent remove on Mapping by Content')
       .toEqual(2);
     expect(ideaUt02.parents.length)
-      .withContext("One parent left, one parent remove on Mapping by Id")
+      .withContext('One parent left, one parent remove on Mapping by Id')
       .toEqual(2);
   });
 
@@ -373,14 +377,18 @@ describe('InMemoryConceptDatabaseService', () => {
 
     let concept01Id = concept01.id;
     expect(db.conceptDbLength)
-            .withContext('Only one Concept should have been saved into the Database on Mapping by Id List')
+      .withContext(
+        'Only one Concept should have been saved into the Database on Mapping by Id List'
+      )
       .toBe(1);
 
     // new db query
     let conceptQueryResult = db.getConceptQueryByContent(conceptContent);
 
     expect(conceptQueryResult.length)
-      .withContext('Only one Concept should have been saved into the Database on Mapping by Content List')
+      .withContext(
+        'Only one Concept should have been saved into the Database on Mapping by Content List'
+      )
       .toEqual(1);
 
     let ideaUt01 = conceptQueryResult[0];
@@ -428,10 +436,14 @@ describe('InMemoryConceptDatabaseService', () => {
 
     // making sure only one concept is saved in the database
     expect(db.conceptDbLength)
-      .withContext('Only one Concept should have been saved into the Database on Mapping by Id List')
+      .withContext(
+        'Only one Concept should have been saved into the Database on Mapping by Id List'
+      )
       .toBe(1);
     expect(conceptQueryResult.length)
-      .withContext('Only one Concept should have been saved into the Database on Mapping by Content List')
+      .withContext(
+        'Only one Concept should have been saved into the Database on Mapping by Content List'
+      )
       .toEqual(1);
 
     let ideaUt01 = conceptQueryResult[0];
@@ -440,11 +452,11 @@ describe('InMemoryConceptDatabaseService', () => {
     expect(ideaUt01.tags.length)
       .withContext(
         'Should not removed any tags from Concept Map by Content  List.'
-      ).toBe(2);
+      )
+      .toBe(2);
     expect(ideaUt02.tags.length)
-      .withContext(
-      'Should not removed any tags from Concept Map by Id  List.'
-    ).toBe(2);
+      .withContext('Should not removed any tags from Concept Map by Id  List.')
+      .toBe(2);
   });
 
   it('T01.02.03.2.3.2 When Saving a Concept Given a new Tag Should add new parent', () => {
@@ -574,5 +586,83 @@ describe('InMemoryConceptDatabaseService', () => {
     expect(db.flagConceptExistById(concept.id)).toBeFalse();
 
     expect(db.getConceptQueryByContent(concept.content).length).toBe(0);
+  });
+
+  it('T04.02.01 When Changing the Concept Topic Should update all Idea relationships', () => {
+    let content = 'Comprar Tylenol';
+    let newContent = 'Comprar Tylenol PM';
+
+    let concept01 = new Concept(content);
+    conceptSut.saveConcept(concept01);
+
+    let idea01 = new Idea('toBuy');
+    idea01.concepts.push(concept01);
+    ideaSut.saveIdea(idea01);
+
+    let idea02 = new Idea('atTheDrugstore');
+    idea02.concepts.push(concept01);
+    ideaSut.saveIdea(idea02);
+
+    let newIdea01a = db.getIdeaById(idea01.id);
+    let newIdea02a = db.getIdeaById(idea02.id);
+
+    expect(newIdea01a.concepts[0].content)
+      .withContext('El concepto asociado debe existir en la Idea #1')
+      .toBe(content);
+    expect(newIdea02a.concepts[0].content)
+      .withContext('El concept asociado debe existir en la Idea #2')
+      .toBe(content);
+
+    concept01.content = newContent;
+    conceptSut.saveConcept(concept01);
+
+    newIdea01a = db.getIdeaById(idea01.id);
+    newIdea02a = db.getIdeaById(idea02.id);
+
+    expect(newIdea01a.concepts[0].content)
+      .withContext('El concepto actualizado debe existir en la Idea #1')
+      .toBe(newContent);
+    expect(newIdea02a.concepts[0].content)
+      .withContext('El concept actualizado debe existir en la Idea #2')
+      .toBe(newContent);
+  });
+
+  it('T04.02.01 When Changing the Concept Topic Should update all Tag relationships', () => {
+    let content = 'Comprar Tylenol';
+    let newContent = 'Comprar Tylenol PM';
+
+    let concept01 = new Concept(content);
+    conceptSut.saveConcept(concept01);
+
+    let tag01 = new Tag('toBuy');
+    tag01.concepts.push(concept01);
+    tagSut.saveTag(tag01);
+
+    let tag02 = new Tag('atTheDrugstore');
+    tag02.concepts.push(concept01);
+    tagSut.saveTag(tag02);
+
+    let newTag01a = db.getTagById(tag01.id);
+    let newTag02a = db.getTagById(tag02.id);
+
+    expect(newTag01a.concepts[0].content)
+      .withContext('El concepto asociado d  ebe existir en la Tag #1')
+      .toBe(content);
+    expect(newTag02a.concepts[0].content)
+      .withContext('El concept asociado debe existir en la Tag #2')
+      .toBe(content);
+
+    concept01.content = newContent;
+    conceptSut.saveConcept(concept01);
+
+    newTag01a = db.getTagById(tag01.id);
+    newTag02a = db.getTagById(tag02.id);
+
+    expect(newTag01a.concepts[0].content)
+      .withContext('El concepto actualizado debe existir en la Tag #1')
+      .toBe(newContent);
+    expect(newTag02a.concepts[0].content)
+      .withContext('El concept actualizado debe existir en la Idea #2')
+      .toBe(newContent);
   });
 });

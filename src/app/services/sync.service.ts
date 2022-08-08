@@ -1,3 +1,4 @@
+import { CopyService } from './copy.service';
 import { ChildConcept } from './../shared/concept';
 import { ChildTag } from './../shared/tag';
 import { Injectable } from '@angular/core';
@@ -19,6 +20,108 @@ export class SyncService {
     private history: HistoricService
   ) {}
 
+  propagateTagChangesToAssociatedObjects(tag: Tag) {
+    this.propagateTagChangesToAssociatedConcepts(tag);
+    this.propagateTagChangesToAssociatedIdeas(tag);
+  }
+
+  private propagateTagChangesToAssociatedIdeas(tag: Tag) {
+    tag.ideas?.forEach((childIdea) => {
+      if (!this.db.flagIdeaExistById(childIdea.id)) {
+        return;
+      }
+
+      let existingIdea = this.db.getIdeaById(childIdea.id);
+
+      if (existingIdea.tags.filter((x) => x.id === tag.id).length > 0) {
+        let childTag = existingIdea.tags.filter((x) => x.id === tag.id)[0];
+        if (childTag.name !== tag.name) {
+          this.history.saveIdea(existingIdea.id);
+          existingIdea.lasUpdated = new Date().getTime();
+          childTag.name = tag.name;
+          this.db.setIdeaToIdMap(existingIdea);
+          this.db.setIdeaToTopicMap(existingIdea);
+        }
+      } else {
+        existingIdea.tags.push(new ChildTag(tag.id, tag.name));
+        this.history.saveIdea(existingIdea.id);
+        existingIdea.lasUpdated = new Date().getTime();
+        this.db.setIdeaToIdMap(existingIdea);
+        this.db.setIdeaToTopicMap(existingIdea);
+      }
+    });
+  }
+
+  private propagateTagChangesToAssociatedConcepts(tag: Tag) {
+    tag.concepts?.forEach((childConcept) => {
+      if (!this.db.flagConceptExistById(childConcept.id)) {
+        return;
+      }
+      let existingConcept = this.db.getConceptById(childConcept.id);
+
+      if (existingConcept.tags.filter((x) => x.id === tag.id).length > 0) {
+        let childTag = existingConcept.tags.filter((x) => x.id === tag.id)[0];
+        if (childTag.name !== tag.name) {
+          this.history.saveConcept(existingConcept.id);
+          existingConcept.lasUpdated = new Date().getTime();
+          childTag.name = tag.name;
+          this.db.setConceptToIdMap(existingConcept);
+          this.db.insertConceptToSortByContentList(existingConcept);
+        }
+      } else {
+        let childTag = new ChildTag(tag.id, tag.name);
+
+        existingConcept.tags.push(childTag);
+        this.history.saveConcept(existingConcept.id);
+        existingConcept.lasUpdated = new Date().getTime();
+        this.db.setConceptToIdMap(existingConcept);
+        this.db.insertConceptToSortByContentList(existingConcept);
+      }
+    });
+  }
+
+  public propagateConceptChangesToAssociatedObjects(concept: Concept): void {
+    this.propagateConceptChangesToAssociatedParents(concept);
+    this.propagateConceptChangesToAssociatedTags(concept);
+  }
+
+  /**
+   * Summary:
+   * Actualiza todos las Ideas asociadas a este Concepto.
+   *   1. De cada uno de estas Ideas se actualiza el Concepto correspondiente
+   *   2. Para nuevas asociaciones se creará una nuevo Concepto
+   * Remarks:
+   * @param concept el Concepto con el listado de child Tags que se utilizará para actualizar los Tags asociados
+   */
+  private propagateConceptChangesToAssociatedParents(concept: Concept): void {
+    concept.parents?.forEach((parentIdea) => {
+      if (!this.db.flagIdeaExistById(parentIdea.id)) {
+        return;
+      }
+
+      let existingIdea = this.db.getIdeaById(parentIdea.id);
+
+      if (existingIdea.concepts.filter((x) => x.id === concept.id).length > 0) {
+        let childConcept = existingIdea.concepts.filter(
+          (x) => x.id === concept.id
+        )[0];
+        if (childConcept.content !== concept.content) {
+          this.history.saveIdea(existingIdea.id);
+          existingIdea.lasUpdated = new Date().getTime();
+          childConcept.content = concept.content;
+          this.db.setIdeaToIdMap(existingIdea);
+          this.db.setIdeaToTopicMap(existingIdea);
+        }
+      } else {
+        existingIdea.concepts.push(concept);
+        this.history.saveIdea(existingIdea.id);
+        existingIdea.lasUpdated = new Date().getTime();
+        this.db.setIdeaToIdMap(existingIdea);
+        this.db.setIdeaToTopicMap(existingIdea);
+      }
+    });
+  }
+
   /**
    * Summary:
    * Actualiza todos los Tags asociados a este Concepto.
@@ -27,7 +130,7 @@ export class SyncService {
    * Remarks:
    * @param concept el Concepto con el listado de child Tags que se utilizará para actualizar los Tags asociados
    */
-  public propagateConceptChangesToAssociatedTags(concept: Concept): void {
+  private propagateConceptChangesToAssociatedTags(concept: Concept): void {
     concept.tags?.forEach((childTag) => {
       if (!this.db.flagTagExistById(childTag.id)) {
         return;
@@ -58,6 +161,49 @@ export class SyncService {
     });
   }
 
+  public propagateIdeaChangesToAssociatedObjects(idea: Idea): void {
+    this.propagateIdeaChangesToAssociatedTags(idea);
+    this.propagateIdeaChangesToAssociatedConcepts(idea);
+  }
+
+  /**
+   * Summary:
+   * Actualiza todos los Conceptos asociados a esta Idea.
+   *   1. De cada uno de estos Conceptos se actualiza la Child Idea correspondiente
+   *   2. Para nuevas asociaciones se creará una nueva Child Idea
+   * Remarks:
+   * @param idea la Idea con el listado de Child Tags que se utilizará para actualizar los Tags asociados
+   */
+  private propagateIdeaChangesToAssociatedConcepts(idea: Idea): void {
+    idea.concepts?.forEach((childConcept) => {
+      if (!this.db.flagConceptExistById(childConcept.id)) {
+        return;
+      }
+      let existingConcept = this.db.getConceptById(childConcept.id);
+
+      if (existingConcept.parents.filter((x) => x.id === idea.id).length > 0) {
+        let childIdea = existingConcept.parents.filter(
+          (x) => x.id === idea.id
+        )[0];
+        if (childIdea.topic !== idea.topic) {
+          this.history.saveConcept(existingConcept.id);
+          existingConcept.lasUpdated = new Date().getTime();
+          childIdea.topic = idea.topic;
+          this.db.setConceptToIdMap(existingConcept);
+          this.db.insertConceptToSortByContentList(existingConcept);
+        }
+      } else {
+        let childIdea = new ChildIdea(idea.id, idea.topic);
+
+        existingConcept.parents.push(childIdea);
+        this.history.saveConcept(existingConcept.id);
+        existingConcept.lasUpdated = new Date().getTime();
+        this.db.setConceptToIdMap(existingConcept);
+        this.db.insertConceptToSortByContentList(existingConcept);
+      }
+    });
+  }
+
   /**
    * Summary:
    * Actualiza todos los Tags asociados a esta Idea.
@@ -66,7 +212,7 @@ export class SyncService {
    * Remarks:
    * @param idea la Idea con el listado de Child Tags que se utilizará para actualizar los Tags asociados
    */
-  public propagateIdeaChangesToAssociatedTags(idea: Idea): void {
+  private propagateIdeaChangesToAssociatedTags(idea: Idea): void {
     idea.tags?.forEach((childTag) => {
       if (!this.db.flagTagExistById(childTag.id)) {
         return;

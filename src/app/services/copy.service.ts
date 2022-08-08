@@ -58,7 +58,7 @@ export class CopyService {
       copyConcept.parents.push(new ChildIdea(idea.id, idea.topic));
     });
 
-    return copyConcept; //1
+    return copyConcept;
   }
 
   public getIdeaCopy(idea: Idea): Idea {

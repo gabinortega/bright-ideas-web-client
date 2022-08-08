@@ -4,7 +4,16 @@ import { ChildIdea } from './idea';
 
 export class Concept {
   id: number = 0;
-  content: string = '';
+  private _content: string = '';
+
+  public get content(): string {
+    return this._content;
+  }
+
+  public set content(newContent: string) {
+    this._content = newContent;
+  }
+
   type: ConceptType = ConceptType.info;
   tags: ChildTag[] = [];
   parents: ChildIdea[] = [];

@@ -27,7 +27,7 @@ export class InMemoryIdeaDatabaseService {
 
     let ideaDb = this.db.setIdeaToIdMap(idea);
     this.db.setIdeaToTopicMap(ideaDb);
-    this.sync.propagateIdeaChangesToAssociatedTags(idea);
+    this.sync.propagateIdeaChangesToAssociatedObjects(idea);
     return ideaDb;
   }
 
@@ -74,7 +74,7 @@ export class InMemoryIdeaDatabaseService {
     existingIdea.lasUpdated = currentDate;
     this.db.setIdeaToIdMap(existingIdea);
     this.db.setIdeaToTopicMap(existingIdea);
-    this.sync.propagateIdeaChangesToAssociatedTags(existingIdea);
+    this.sync.propagateIdeaChangesToAssociatedObjects(existingIdea);
     return existingIdea;
   }
 

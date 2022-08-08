@@ -14,6 +14,7 @@ export class InMemoryTagDatabaseService {
     tag.lasUpdated = currentDate;
     let result = this.db.setTagToIdMap(tag);
     this.db.setTagToNameMap(result);
+    this.sync.propagateTagChangesToAssociatedObjects(tag);
     return result;
   }
 
@@ -51,6 +52,7 @@ export class InMemoryTagDatabaseService {
     existingTag.lasUpdated = new Date().getTime();
     let result = this.db.setTagToIdMap(existingTag);
     this.db.setTagToNameMap(existingTag);
+    this.sync.propagateTagChangesToAssociatedObjects(existingTag);
     return result;
   }
 
@@ -92,7 +94,7 @@ export class InMemoryTagDatabaseService {
     existingTag.setName(newTagName);
     existingTag.lasUpdated = new Date().getTime();
 
-    // aquí yo necesito que todos las idea.childTags actualicen el childTag.name
+    // aquí yo necesito que todos las idea.childTags asociados actualicen el childTag.name
     existingTag = this.sync.syncTag(existingTag);
     console.log('existingTag: ', existingTag);
 

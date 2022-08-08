@@ -19,7 +19,7 @@ export class InMemoryConceptDatabaseService {
     concept.lasUpdated = currentDate;
     let conceptDb = this.db.setConceptToIdMap(concept);
     this.db.insertConceptToSortByContentList(conceptDb);
-    this.sync.propagateConceptChangesToAssociatedTags(conceptDb);
+    this.sync.propagateConceptChangesToAssociatedObjects(conceptDb);
     return conceptDb;
   }
 
@@ -56,7 +56,7 @@ export class InMemoryConceptDatabaseService {
     existingConcept.lasUpdated = new Date().getTime();
     let result = this.db.setConceptToIdMap(existingConcept);
     this.db.updateConceptToSortByContentList(existingConcept);
-    this.sync.propagateConceptChangesToAssociatedTags(existingConcept);
+    this.sync.propagateConceptChangesToAssociatedObjects(existingConcept);
     return result;
   }
 
