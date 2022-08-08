@@ -1,3 +1,4 @@
+import { SyncService } from './sync.service';
 import { ChildIdea } from './../shared/idea';
 import { InMemoryDatabaseService } from './in-memory-database.service';
 import { Injectable } from '@angular/core';
@@ -26,6 +27,7 @@ export class InMemoryIdeaDatabaseService {
 
     let ideaDb = this.db.setIdeaToIdMap(idea);
     this.db.setIdeaToTopicMap(ideaDb);
+    this.sync.propagateIdeaChangesToAssociatedTags(idea);
     return ideaDb;
   }
 
@@ -63,6 +65,8 @@ export class InMemoryIdeaDatabaseService {
       }
     });
 
+    //this.updateChildTags(existingIdea);
+
     this.history.saveIdea(existingIdea.id);
     let currentDate = new Date().getTime();
     // existingIdea.created is not going to be updated here.
@@ -70,6 +74,7 @@ export class InMemoryIdeaDatabaseService {
     existingIdea.lasUpdated = currentDate;
     this.db.setIdeaToIdMap(existingIdea);
     this.db.setIdeaToTopicMap(existingIdea);
+    this.sync.propagateIdeaChangesToAssociatedTags(existingIdea);
     return existingIdea;
   }
 
@@ -205,6 +210,7 @@ export class InMemoryIdeaDatabaseService {
 
   constructor(
     private db: InMemoryDatabaseService,
+    private sync: SyncService,
     private history: HistoricService
   ) {}
 }

@@ -1,3 +1,4 @@
+import { SyncService } from './sync.service';
 import { HistoricService } from './historic.service';
 import { Injectable } from '@angular/core';
 import { ChildTag, Tag } from '../shared/tag';
@@ -81,17 +82,23 @@ export class InMemoryTagDatabaseService {
   }
 
   changeTagName(tag: Tag, newTagName: string): Tag {
-    if (this.db.flagTagExistById(tag.id)) {
-      let existingTag = this.db.getTagById(tag.id);
-      existingTag.setName(newTagName);
-
-      this.history.saveTag(existingTag.id);
-      existingTag.lasUpdated = new Date().getTime();
-      let result = this.db.setTagToIdMap(existingTag);
-      this.db.setTagToNameMap(existingTag);
-      return result;
+    if (!this.db.flagTagExistById(tag.id)) {
+      throw new Error(`A Tag with id ${tag.id} does not exist.`);
     }
-    throw new Error(`A Tag with id ${tag.id} does not exist.`);
+
+    let existingTag = this.db.getTagById(tag.id);
+    this.history.saveTag(existingTag.id);
+
+    existingTag.setName(newTagName);
+    existingTag.lasUpdated = new Date().getTime();
+
+    // aquí yo necesito que todos las idea.childTags actualicen el childTag.name
+    existingTag = this.sync.syncTag(existingTag);
+    console.log('existingTag: ', existingTag);
+
+    let result = this.db.setTagToIdMap(existingTag);
+    this.db.setTagToNameMap(existingTag);
+    return result;
   }
 
   removeIdeaRelationship(tag: Tag, parentId: number): Tag {
@@ -188,6 +195,7 @@ export class InMemoryTagDatabaseService {
 
   constructor(
     private db: InMemoryDatabaseService,
+    private sync: SyncService,
     private history: HistoricService
   ) {}
 }

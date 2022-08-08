@@ -545,40 +545,67 @@ describe('InMemoryTagDatabaseService', () => {
   });
 
   it('T04.03.01 When Changing the Tag Name Should update all relationships', () => {
-    const tagName = 'tag-000000';
-    const newTagName = 'tag-1234656';
+    const tagName = 'compras';
+    const newTagName = 'compras en la farmacia';
     let tag = new Tag(tagName);
     tag.isUrgent = false;
 
     // saving a new tag with name 'tag-000000
     tag = tagSut.saveTag(tag);
-    let ideaId = tag.id;
 
-    let idea01 = new Idea('topic01');
+    let idea01 = new Idea('toBuy');
     idea01.tags.push(tag);
     ideaSut.saveIdea(idea01);
-    let idea01Id = idea01.id;
 
-    let idea02 = new Idea('topic02');
+    let idea02 = new Idea('atTheDrugstore');
     idea02.tags.push(tag);
     ideaSut.saveIdea(idea02);
-    let idea02Id = idea01.id;
 
-    let newIdea01a = db.getIdeaById(idea01Id);
-    let newIdea02a = db.getIdeaById(idea02Id);
+    let concept01 = new Concept('Comprar Tylenol');
+    concept01.tags.push(tag);
+    conceptSut.saveConcept(concept01);
 
-    expect(newIdea01a.tags[0].name).toBe(tagName);
-    expect(newIdea02a.tags[0].name).toBe(tagName);
+    let concept02 = new Concept('Comprar Aspirina');
+    concept02.tags.push(tag);
+    conceptSut.saveConcept(concept02);
+
+    let newIdea01a = db.getIdeaById(idea01.id);
+    let newIdea02a = db.getIdeaById(idea02.id);
+    let newConcept01a = db.getConceptById(concept01.id);
+    let newConcept02a = db.getConceptById(concept02.id);
+
+    expect(newIdea01a.tags[0].name)
+      .withContext('El tag asociado debe existir en la Idea #1')
+      .toBe(tagName);
+    expect(newIdea02a.tags[0].name)
+      .withContext('El tag asociado debe existir en la Idea #2')
+      .toBe(tagName);
+    expect(newConcept01a.tags[0].name)
+      .withContext('El tag asociado debe existir en el Concepto #1')
+      .toBe(tagName);
+    expect(newConcept02a.tags[0].name)
+      .withContext('El tag asociado debe existir en el Concepto #2')
+      .toBe(tagName);
 
     tagSut.changeTagName(tag, newTagName);
 
-    let newIdea01b = db.getIdeaById(idea01Id);
-    let newIdea02b = db.getIdeaById(idea02Id);
+    let newIdea01b = db.getIdeaById(idea01.id);
+    let newIdea02b = db.getIdeaById(idea02.id);
+    let newConcept01b = db.getConceptById(concept01.id);
+    let newConcept02b = db.getConceptById(concept02.id);
 
-    expect(newIdea01b.tags[0].name).toBe(newTagName);
-    expect(newIdea02b.tags[0].name).toBe(newTagName);
-    expect(newIdea01a.tags[0].name).toBe(tagName);
-    expect(newIdea02a.tags[0].name).toBe(tagName);
+    expect(newIdea01b.tags[0].name)
+      .withContext('El tag actualizado debe existir en el Idea #1')
+      .toBe(newTagName);
+    expect(newIdea02b.tags[0].name)
+      .withContext('El tag actualizado debe existir en el Idea #2')
+      .toBe(newTagName);
+    expect(newConcept01b.tags[0].name)
+      .withContext('El tag actualizado debe existir en el Concepto #1')
+      .toBe(newTagName);
+    expect(newConcept02b.tags[0].name)
+      .withContext('El tag actualizado debe existir en el Concepto #2.')
+      .toBe(newTagName);
   });
 
   it('Should remove a Tag from the database', () => {

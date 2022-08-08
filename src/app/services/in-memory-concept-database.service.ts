@@ -1,3 +1,4 @@
+import { SyncService } from './sync.service';
 import { Injectable } from '@angular/core';
 import { Status } from '../shared/models';
 import { Concept, ConceptType } from '../shared/concept';
@@ -18,6 +19,7 @@ export class InMemoryConceptDatabaseService {
     concept.lasUpdated = currentDate;
     let conceptDb = this.db.setConceptToIdMap(concept);
     this.db.insertConceptToSortByContentList(conceptDb);
+    this.sync.propagateConceptChangesToAssociatedTags(conceptDb);
     return conceptDb;
   }
 
@@ -54,6 +56,7 @@ export class InMemoryConceptDatabaseService {
     existingConcept.lasUpdated = new Date().getTime();
     let result = this.db.setConceptToIdMap(existingConcept);
     this.db.updateConceptToSortByContentList(existingConcept);
+    this.sync.propagateConceptChangesToAssociatedTags(existingConcept);
     return result;
   }
 
@@ -176,6 +179,7 @@ export class InMemoryConceptDatabaseService {
 
   constructor(
     private db: InMemoryDatabaseService,
+    private sync: SyncService,
     private history: HistoricService
   ) {}
 }

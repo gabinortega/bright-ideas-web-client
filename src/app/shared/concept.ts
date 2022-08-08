@@ -45,7 +45,9 @@ export enum ConceptType {
 }
 
 export class ChildConcept {
-  id: number = 0;
-  content: string = '';
-  type: ConceptType = ConceptType.info;
+  constructor(
+    public id: number = 0,
+    public content: string = '',
+    public type: ConceptType = ConceptType.info
+  ) {}
 }

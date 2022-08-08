@@ -39,32 +39,26 @@ export class CopyService {
   }
 
   public getConceptCopy(concept: Concept): Concept {
-    let conceptCopy = new Concept();
-    conceptCopy.id = concept.id;
-    conceptCopy.status = concept.status;
-    conceptCopy.priorityOrder = concept.priorityOrder;
-    conceptCopy.isImportant = concept.isImportant;
-    conceptCopy.isUrgent = concept.isUrgent;
-    conceptCopy.content = concept.content;
-    conceptCopy.created = concept.created;
-    conceptCopy.lasUpdated = concept.lasUpdated;
-    conceptCopy.type = concept.type;
+    let copyConcept = new Concept();
+    copyConcept.id = concept.id;
+    copyConcept.status = concept.status;
+    copyConcept.priorityOrder = concept.priorityOrder;
+    copyConcept.isImportant = concept.isImportant;
+    copyConcept.isUrgent = concept.isUrgent;
+    copyConcept.content = concept.content;
+    copyConcept.created = concept.created;
+    copyConcept.lasUpdated = concept.lasUpdated;
+    copyConcept.type = concept.type;
 
     concept.tags.forEach((tag) => {
-      let childTag = new ChildTag();
-      childTag.id = tag.id;
-      childTag.name = tag.name;
-      conceptCopy.tags.push(tag);
+      copyConcept.tags.push(new ChildTag(tag.id, tag.name));
     });
 
     concept.parents.forEach((idea) => {
-      let childIdea = new ChildIdea();
-      childIdea.id = idea.id;
-      childIdea.topic = idea.topic;
-      conceptCopy.parents.push(childIdea);
+      copyConcept.parents.push(new ChildIdea(idea.id, idea.topic));
     });
 
-    return conceptCopy;
+    return copyConcept; //1
   }
 
   public getIdeaCopy(idea: Idea): Idea {
@@ -79,22 +73,15 @@ export class CopyService {
     ideaCopy.lasUpdated = idea.lasUpdated;
 
     idea.concepts.forEach((concept) => {
-      let conceptCopy = this.getConceptCopy(concept);
-      ideaCopy.concepts.push(conceptCopy);
+      ideaCopy.concepts.push(this.getConceptCopy(concept));
     });
 
     idea.tags.forEach((tag) => {
-      let childTag = new ChildTag();
-      childTag.id = tag.id;
-      childTag.name = tag.name;
-      ideaCopy.tags.push(childTag);
+      ideaCopy.tags.push(new ChildTag(tag.id, tag.name));
     });
 
     idea.parents.forEach((idea) => {
-      let childIdea = new ChildIdea();
-      childIdea.id = idea.id;
-      childIdea.topic = idea.topic;
-      ideaCopy.parents.push(childIdea);
+      ideaCopy.parents.push(new ChildIdea(idea.id, idea.topic));
     });
 
     return ideaCopy;
@@ -111,18 +98,19 @@ export class CopyService {
     tagCopy.lasUpdated = tag.lasUpdated;
 
     tag.concepts.forEach((concept) => {
-      let childConcept = new ChildConcept();
-      childConcept.content = concept.content;
-      childConcept.id = concept.id;
-      childConcept.type = concept.type;
-      tagCopy.concepts.push(childConcept);
+      let copyConcept = new ChildConcept(
+        concept.id,
+        concept.content,
+        concept.type
+      );
+      tagCopy.concepts.push(copyConcept);
     });
 
     tag.ideas.forEach((idea) => {
-      let childIdea = new ChildIdea();
-      childIdea.id = idea.id;
-      childIdea.topic = idea.topic;
-      tagCopy.ideas.push(childIdea);
+      let copyIdea = new ChildIdea();
+      copyIdea.id = idea.id;
+      copyIdea.topic = idea.topic;
+      tagCopy.ideas.push(copyIdea);
     });
 
     tag.keywords.forEach((keyword) => {

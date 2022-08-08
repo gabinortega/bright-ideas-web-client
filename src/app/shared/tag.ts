@@ -29,8 +29,7 @@ export class Tag {
 }
 
 export class ChildTag {
-  id: number = 0;
-  name: string = '';
+  constructor(public id: number = 0, public name: string = '') {}
 }
 
 export class TagKeywords {
