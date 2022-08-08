@@ -577,4 +577,83 @@ describe('InMemoryIdeaDatabaseService', () => {
     expect(db.flagIdeaExistById(idea.id)).toBeFalse();
     expect(db.flagIdeaExistByTopic(idea.topic)).toBeFalse();
   });
+
+  it('T04.01.02 When Changing the Idea Topic Should update all Concept relationships', () => {
+    const ideaTopic = 'compras';
+    const newIdeaTopic = 'compras en la farmacia';
+    let idea = new Idea(ideaTopic);
+    idea.isUrgent = false;
+
+    idea = ideaSut.saveIdea(idea);
+
+    let concept01 = new Concept('Comprar Tylenol');
+    concept01.parents.push(idea);
+    conceptSut.saveConcept(concept01);
+
+    let concept02 = new Concept('Comprar Aspirina');
+    concept02.parents.push(idea);
+    conceptSut.saveConcept(concept02);
+
+    let newConcept01a = db.getConceptById(concept01.id);
+    let newConcept02a = db.getConceptById(concept02.id);
+
+    expect(newConcept01a.parents[0].topic)
+      .withContext('The parent Idea asociado debe existir en el Concepto #1')
+      .toBe(ideaTopic);
+    expect(newConcept02a.parents[0].topic)
+      .withContext('The parent Idea asociado debe existir en el Concepto #2')
+      .toBe(ideaTopic);
+
+    ideaSut.changeTopicName(idea, newIdeaTopic);
+
+    let newConcept01b = db.getConceptById(concept01.id);
+    let newConcept02b = db.getConceptById(concept02.id);
+
+    expect(newConcept01b.parents[0].topic)
+      .withContext('The parent Idea actualizado debe existir en el Concepto #1')
+      .toBe(newIdeaTopic);
+    expect(newConcept02b.parents[0].topic)
+      .withContext(
+        'The parent Idea actualizado debe existir en el Concepto #2.'
+      )
+      .toBe(newIdeaTopic);
+  });
+
+  it('T04.02.03 When Changing the Idea Topic Should update all Tag relationships', () => {
+    let topic = 'Comprar Tylenol';
+    let newTopic = 'Comprar Tylenol PM';
+
+    let idea01 = new Idea(topic);
+    ideaSut.saveIdea(idea01);
+
+    let tag01 = new Tag('toBuy');
+    tag01.ideas.push(idea01);
+    tagSut.saveTag(tag01);
+
+    let tag02 = new Tag('atTheDrugstore');
+    tag02.ideas.push(idea01);
+    tagSut.saveTag(tag02);
+
+    let newTag01a = db.getTagById(tag01.id);
+    let newTag02a = db.getTagById(tag02.id);
+
+    expect(newTag01a.ideas[0].topic)
+      .withContext('El concepto asociado d  ebe existir en la Tag #1')
+      .toBe(topic);
+    expect(newTag02a.ideas[0].topic)
+      .withContext('El concept asociado debe existir en la Tag #2')
+      .toBe(topic);
+
+    idea01 = ideaSut.changeTopicName(idea01, newTopic);
+
+    newTag01a = db.getTagById(tag01.id);
+    newTag02a = db.getTagById(tag02.id);
+
+    expect(newTag01a.ideas[0].topic)
+      .withContext('El concepto actualizado debe existir en la Tag #1')
+      .toBe(newTopic);
+    expect(newTag02a.ideas[0].topic)
+      .withContext('El concept actualizado debe existir en la Idea #2')
+      .toBe(newTopic);
+  });
 });

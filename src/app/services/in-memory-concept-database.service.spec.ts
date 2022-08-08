@@ -627,7 +627,7 @@ describe('InMemoryConceptDatabaseService', () => {
       .toBe(newContent);
   });
 
-  it('T04.02.01 When Changing the Concept Topic Should update all Tag relationships', () => {
+  it('T04.02.03 When Changing the Concept Topic Should update all Tag relationships', () => {
     let content = 'Comprar Tylenol';
     let newContent = 'Comprar Tylenol PM';
 

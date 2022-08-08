@@ -119,6 +119,7 @@ export class InMemoryIdeaDatabaseService {
       existingIdea.lasUpdated = new Date().getTime();
       let result = this.db.setIdeaToIdMap(existingIdea);
       this.db.setIdeaToTopicMap(existingIdea);
+      this.sync.propagateIdeaChangesToAssociatedObjects(existingIdea);
       return result;
     }
     throw new Error(`An Idea with id ${idea.id} does not exist.`);
